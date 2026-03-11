@@ -23,7 +23,7 @@ const jetbrains = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'BCN – The Bengal Chronicle Network',
+    default: 'BCN - The Bengal Chronicle Network',
     template: '%s | BCN',
   },
   description: 'বাংলার সেরা সংবাদ মাধ্যম — The Bengal Chronicle Network',

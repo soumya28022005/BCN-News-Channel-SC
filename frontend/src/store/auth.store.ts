@@ -1,3 +1,4 @@
+// frontend/src/store/auth.store.ts
 import { create } from 'zustand';
 import { User } from '../types';
 
@@ -31,9 +32,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       const data = await res.json();
 
       if (data.success && data.data?.accessToken) {
+        // Token ebong user data storage-e save kora hochche
         localStorage.setItem('accessToken', data.data.accessToken);
         localStorage.setItem('refreshToken', data.data.refreshToken);
         localStorage.setItem('user', JSON.stringify(data.data.user));
+        
         set({
           user: data.data.user,
           accessToken: data.data.accessToken,
@@ -45,29 +48,35 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ isLoading: false });
         return { success: false, error: data.message || 'Login failed' };
       }
-    } catch {
+    } catch (error) {
       set({ isLoading: false });
       return { success: false, error: 'Network error' };
     }
   },
 
   logout: () => {
+    // Storage clean kora hochche
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     set({ user: null, accessToken: null, isAuthenticated: false });
-    window.location.href = '/auth/login';
+    // Logout korar por login page-e redirect
+    if (typeof window !== 'undefined') {
+      window.location.href = '/auth/login';
+    }
   },
 
   loadFromStorage: () => {
     if (typeof window === 'undefined') return;
     const token = localStorage.getItem('accessToken');
     const userStr = localStorage.getItem('user');
+    
     if (token && userStr) {
       try {
         const user = JSON.parse(userStr);
         set({ user, accessToken: token, isAuthenticated: true });
-      } catch {
+      } catch (error) {
+        // Parse error hole storage clear kore deoya hochche
         localStorage.removeItem('user');
         localStorage.removeItem('accessToken');
       }

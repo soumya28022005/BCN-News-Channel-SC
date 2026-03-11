@@ -491,6 +491,8 @@ http://localhost:3000/contact
 
 ## 📞 Support
 
+start laways redis-server
+
 - **Email**: tech@bengalchronicle.com
 - **GitHub Issues**: github.com/BCNChronicle/platform/issues
 

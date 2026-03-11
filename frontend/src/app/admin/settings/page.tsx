@@ -62,7 +62,7 @@ export default function AdminSettingsPage() {
             ))}
           </div>
         </div>
-
+            
         {/* Danger Zone */}
         <div className="bg-[#111118] border border-[#E53E3E]/20 rounded-lg p-6">
           <h3 className="text-[#E53E3E] font-bold mb-4">Danger Zone</h3>
