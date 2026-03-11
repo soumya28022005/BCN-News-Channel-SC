@@ -474,6 +474,21 @@ GOOGLE_VERIFICATION_TOKEN=your-google-token
 
 ---
 
+## FOR ADMIN USER AND PASSWORD
+Email:    admin@bengalchronicle.com
+Password: Admin@BCN2024!
+
+## backend check
+http://localhost:3000/auth/login
+http://localhost:3000/admin
+http://localhost:3000/admin/articles
+http://localhost:3000/admin/articles/create
+http://localhost:3000/category/bengal
+http://localhost:3000/trending
+http://localhost:3000/search
+http://localhost:3000/about
+http://localhost:3000/contact
+
 ## 📞 Support
 
 - **Email**: tech@bengalchronicle.com
@@ -482,4 +497,4 @@ GOOGLE_VERIFICATION_TOKEN=your-google-token
 ---
 
 *Built with ❤️ for BCN – The Bengal Chronicle Network*
-*"Truth. Speed. Bengal."*
+*"Truth. Speed. Bengal."*# BCN-News-Channel-SC
