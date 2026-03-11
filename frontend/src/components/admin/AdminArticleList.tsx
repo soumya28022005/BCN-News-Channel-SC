@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { timeAgo } from '../../lib/utils';
 import { api } from '../../lib/api';
+import { useAuthStore } from '../../store/auth.store'; // Auth store import kora holo
 
 interface AdminArticleListProps {
   articles: any[];
@@ -9,6 +10,8 @@ interface AdminArticleListProps {
 }
 
 export default function AdminArticleList({ articles, onRefresh }: AdminArticleListProps) {
+  const { user } = useAuthStore(); // Current logged-in user check korar jonno
+
   const handlePublish = async (id: string) => {
     await api.patch(`/articles/${id}/publish`);
     onRefresh();
@@ -18,6 +21,13 @@ export default function AdminArticleList({ articles, onRefresh }: AdminArticleLi
     if (!confirm('সত্যিই মুছে ফেলবেন?')) return;
     await api.delete(`/articles/${id}`);
     onRefresh();
+  };
+
+  // User permission check korar logic (Journalist hole shudhu nijer post edit korte parbe, Admin/Editor sob parbe)
+  const canEditOrDelete = (articleAuthorId: string) => {
+    if (!user) return false;
+    if (user.role === 'ADMIN' || user.role === 'EDITOR') return true;
+    return user.id === articleAuthorId;
   };
 
   return (
@@ -40,11 +50,22 @@ export default function AdminArticleList({ articles, onRefresh }: AdminArticleLi
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {article.status !== 'PUBLISHED' && (
+            {article.status !== 'PUBLISHED' && canEditOrDelete(article.authorId) && (
               <button onClick={() => handlePublish(article.id)} className="text-[#16A34A] text-xs hover:underline">Publish</button>
             )}
+            
             <Link href={`/news/${article.slug}`} className="text-[#64748B] text-xs hover:text-white transition-colors">দেখুন</Link>
-            <button onClick={() => handleDelete(article.id)} className="text-[#E53E3E] text-xs hover:underline">মুছুন</button>
+            
+            {/* Notun Edit Button */}
+            {canEditOrDelete(article.authorId) && (
+              <Link href={`/admin/articles/edit/${article.id}`} className="text-[#3B82F6] text-xs hover:underline">
+                সম্পাদনা
+              </Link>
+            )}
+
+            {canEditOrDelete(article.authorId) && (
+              <button onClick={() => handleDelete(article.id)} className="text-[#E53E3E] text-xs hover:underline">মুছুন</button>
+            )}
           </div>
         </div>
       ))}
