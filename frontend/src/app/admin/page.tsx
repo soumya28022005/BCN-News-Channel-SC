@@ -39,18 +39,29 @@ export default function AdminDashboard() {
       // 🔹 সাংবাদিক হলে শুধু তার নিজের ডাটা আসবে
       const authorFilter = user.role === 'JOURNALIST' ? `&authorId=${user.id}` : '';
 
-      const [allRes, publishedRes, draftRes, usersRes] = await Promise.all([
+      const isJournalist = user.role === 'JOURNALIST';
+      
+      const articlePromises = [
         api.get<any>(`/articles?limit=5${authorFilter}&_t=${timestamp}`),
         api.get<any>(`/articles?status=PUBLISHED&limit=1${authorFilter}&_t=${timestamp}`),
         api.get<any>(`/articles?status=DRAFT&limit=1${authorFilter}&_t=${timestamp}`),
-        api.get<any>(`/users?limit=1&_t=${timestamp}`), 
-      ]);
+      ];
+      
+      const [allRes, publishedRes, draftRes] = await Promise.all(articlePromises);
+      
+      let usersTotal = 0;
+      if (!isJournalist) {
+        try {
+          const usersRes = await api.get<any>(`/users?limit=1&_t=${timestamp}`);
+          usersTotal = usersRes.pagination?.total || 0;
+        } catch {}
+      }
       
       setStats({
         articles: allRes.pagination?.total || 0,
         published: publishedRes.pagination?.total || 0,
         draft: draftRes.pagination?.total || 0,
-        users: usersRes.pagination?.total || 0,
+        users: usersTotal,
       });
       setRecentArticles(allRes.data || []);
     } catch (err) {

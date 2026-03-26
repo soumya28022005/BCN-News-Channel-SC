@@ -34,3 +34,5 @@ next-env.d.ts
 # ─── Uploads ──────────────────────────────────────────────────────
 uploads/
 /tmp/uploads/
+
+backend/logs/

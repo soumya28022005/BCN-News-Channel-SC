@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../../../../store/auth.store';
 import { api } from '../../../../lib/api';
+import ArticleEditor from '../../../../components/admin/ArticleEditor';
 
 export default function CreateArticlePage() {
   const { isAuthenticated, loadFromStorage } = useAuthStore();
@@ -114,10 +115,7 @@ export default function CreateArticlePage() {
                 className="w-full bg-[#111118] text-[#E2E8F0] placeholder-[#64748B] border border-[#1E1E2E] rounded px-4 py-3 text-sm focus:outline-none focus:border-[#E53E3E] transition-colors resize-none" />
             </div>
             <div>
-              <label className="text-[#64748B] text-xs uppercase tracking-wider block mb-2">বিষয়বস্তু * (HTML সমর্থিত)</label>
-              <textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })}
-                placeholder="<p>সংবাদের বিষয়বস্তু লিখুন...</p>" rows={16}
-                className="w-full bg-[#111118] text-[#E2E8F0] placeholder-[#64748B] border border-[#1E1E2E] rounded px-4 py-3 text-sm focus:outline-none focus:border-[#E53E3E] transition-colors resize-none font-mono" />
+              <ArticleEditor value={form.content} onChange={(val) => setForm({ ...form, content: val })} />
             </div>
           </div>
 

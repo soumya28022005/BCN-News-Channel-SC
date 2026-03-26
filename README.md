@@ -21,7 +21,7 @@
 
 ## 1. Project Overview <a name="overview"></a>
 
-**BCN – The Bengal Chronicle Network** is a world-class news platform designed to compete with BBC, CNN, and NDTV. Built with enterprise-grade architecture, it delivers:
+**BCN – The Bengal Chronicle Network** is a world-class news platform. Built with enterprise-grade architecture, it delivers:
 
 - ⚡ **Ultra-fast performance** via SSR/SSG + Redis caching
 - 🔍 **Maximum SEO** — structured data, sitemaps, auto-metadata
@@ -346,13 +346,14 @@ npx prisma migrate dev
 npx prisma db seed  # Optional: seed sample data
 
 # 3. Start backend
-npm run dev   # Runs on :5000
+npm run dev   # Runs on :8000
+npx ts-node-dev --transpile-only src/server.ts
 
 # 4. Setup frontend (new terminal)
 cd ../frontend
 npm install
 cp .env.local.example .env.local
-# Set NEXT_PUBLIC_API_URL=http://localhost:5000/api/v1
+# Set NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 
 # 5. Start frontend
 npm run dev   # Runs on :3000
@@ -386,7 +387,7 @@ curl https://bengalchronicle.com/health
 ### Services started by Docker Compose:
 - **PostgreSQL** → port 5432
 - **Redis** → port 6379
-- **Backend API** → port 5000
+- **Backend API** → port 8000
 - **Frontend** → port 3000
 - **Nginx** → port 80/443
 
@@ -492,6 +493,9 @@ http://localhost:3000/contact
 ## 📞 Support
 
 start laways redis-server
+cd /Users/soumyachatterjee/Desktop/bcn-platform/frontend && npm run dev
+npx ts-node-dev --transpile-only src/server.ts
+cd /Users/soumyachatterjee/Desktop/bcn-platform/backend && npx ts-node-dev --transpile-only src/server.ts
 
 - **Email**: tech@bengalchronicle.com
 - **GitHub Issues**: github.com/BCNChronicle/platform/issues

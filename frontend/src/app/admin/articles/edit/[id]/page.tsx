@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '../../../../../store/auth.store';
 import { api } from '../../../../../lib/api';
+import ArticleEditor from '../../../../../components/admin/ArticleEditor';
 
 export default function EditArticlePage() {
   const params = useParams();
@@ -141,10 +142,7 @@ export default function EditArticlePage() {
         </div>
 
         <div>
-          <label className="text-[#64748B] text-xs uppercase tracking-wider block mb-2">বিষয়বস্তু * (HTML সমর্থিত)</label>
-          <textarea value={form.content} onChange={e => setForm({...form, content: e.target.value})}
-            rows={18} className="w-full bg-[#111118] text-white border border-[#1E1E2E] rounded px-4 py-3 text-sm focus:outline-none focus:border-[#E53E3E] resize-none font-mono transition-colors"
-            placeholder="<p>সংবাদের বিষয়বস্তু লিখুন...</p>" />
+          <ArticleEditor value={form.content} onChange={(val) => setForm({...form, content: val})} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
