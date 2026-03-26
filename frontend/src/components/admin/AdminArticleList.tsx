@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { timeAgo } from '../../lib/utils';
 import { api } from '../../lib/api';
-import { useAuthStore } from '../../store/auth.store'; // Auth store import kora holo
+import { useAuthStore } from '../../store/auth.store';
 
 interface AdminArticleListProps {
   articles: any[];
@@ -10,7 +10,7 @@ interface AdminArticleListProps {
 }
 
 export default function AdminArticleList({ articles, onRefresh }: AdminArticleListProps) {
-  const { user } = useAuthStore(); // Current logged-in user check korar jonno
+  const { user } = useAuthStore();
 
   const handlePublish = async (id: string) => {
     await api.patch(`/articles/${id}/publish`);
@@ -23,12 +23,13 @@ export default function AdminArticleList({ articles, onRefresh }: AdminArticleLi
     onRefresh();
   };
 
-  // User permission check korar logic (Journalist hole shudhu nijer post edit korte parbe, Admin/Editor sob parbe)
   const canEditOrDelete = (articleAuthorId: string) => {
     if (!user) return false;
     if (user.role === 'ADMIN' || user.role === 'EDITOR') return true;
     return user.id === articleAuthorId;
   };
+
+  const isAdminOrEditor = user?.role === 'ADMIN' || user?.role === 'EDITOR';
 
   return (
     <div className="divide-y divide-[#1E1E2E]">
@@ -50,13 +51,13 @@ export default function AdminArticleList({ articles, onRefresh }: AdminArticleLi
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {article.status !== 'PUBLISHED' && canEditOrDelete(article.authorId) && (
+            {/* 🔹 শুধুমাত্র Admin এবং Editor Publish বাটন দেখতে পাবে */}
+            {article.status !== 'PUBLISHED' && isAdminOrEditor && (
               <button onClick={() => handlePublish(article.id)} className="text-[#16A34A] text-xs hover:underline">Publish</button>
             )}
             
             <Link href={`/news/${article.slug}`} className="text-[#64748B] text-xs hover:text-white transition-colors">দেখুন</Link>
             
-            {/* Notun Edit Button */}
             {canEditOrDelete(article.authorId) && (
               <Link href={`/admin/articles/edit/${article.id}`} className="text-[#3B82F6] text-xs hover:underline">
                 সম্পাদনা
