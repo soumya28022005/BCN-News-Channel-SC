@@ -13,7 +13,7 @@ interface AuthState {
   loadFromStorage: () => void;
 }
 
-const API = 'http://localhost:8000/api/v1';
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,

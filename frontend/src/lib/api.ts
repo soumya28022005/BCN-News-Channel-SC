@@ -1,4 +1,5 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+console.log('API_BASE:', API_BASE); 
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
@@ -19,6 +20,7 @@ async function request<T>(
   const res = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     headers,
+    credentials: 'include',
   });
 
   if (res.status === 401) {
