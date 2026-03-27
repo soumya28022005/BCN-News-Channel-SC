@@ -38,7 +38,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="bn" className={`${tiroBangla.variable} ${playfair.variable} ${jetbrains.variable}`}>
+    <html lang="bn" data-scroll-behavior="smooth" className={`${tiroBangla.variable} ${playfair.variable} ${jetbrains.variable}`} >
       <body className="bg-bcn-dark text-bcn-light antialiased">
         {children}
       </body>
