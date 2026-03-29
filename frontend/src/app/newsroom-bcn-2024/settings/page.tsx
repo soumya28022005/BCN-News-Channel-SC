@@ -51,9 +51,8 @@ export default function AdminSettingsPage() {
           <div className="space-y-3 text-sm">
             {[
               { label: 'সাইটের নাম', value: 'The Bengal Chronicle Network' },
-              { label: 'ডোমেইন', value: 'bengalchronicle.com' },
+              { label: 'ডোমেইন', value: 'bengalchronicle.in' },
               { label: 'ভার্সন', value: '1.0.0' },
-              { label: 'Backend', value: 'http://localhost:8000' },
             ].map((item) => (
               <div key={item.label} className="flex items-center justify-between py-2 border-b border-[#1E1E2E] last:border-0">
                 <span className="text-[#64748B]">{item.label}</span>

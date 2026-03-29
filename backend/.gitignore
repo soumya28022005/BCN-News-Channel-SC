@@ -31,3 +31,5 @@ prisma/migrations/
 # Misc
 # ------------------------
 coverage/
+
+.env.example

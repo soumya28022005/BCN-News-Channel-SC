@@ -2,30 +2,81 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '../../../../store/auth.store';
+// Update path to your authStore if necessary
+import { useAuthStore } from '../../../../store/authStore';
 import { api } from '../../../../lib/api';
 import ArticleEditor from '../../../../components/admin/ArticleEditor';
 
 export default function CreateArticlePage() {
-  const { user, isAuthenticated, loadFromStorage } = useAuthStore();
+  const { user, isAuthenticated, loadFromStorage, logout } = useAuthStore();
   const router = useRouter();
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  
   const [form, setForm] = useState({
     title: '', excerpt: '', content: '', categoryId: '',
     isBreaking: false, isFeatured: false,
   });
+  
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  useEffect(() => { loadFromStorage(); }, []);
+  // 🔹 1. LOAD DRAFTS & AUTH ON MOUNT 🔹
+  useEffect(() => { 
+    loadFromStorage(); 
+    
+    // Check if there is an unsaved draft in local storage
+    const savedDraft = localStorage.getItem('bcn_auto_draft');
+    if (savedDraft) {
+      try {
+        setForm(JSON.parse(savedDraft));
+      } catch (e) {
+        console.error("Failed to parse draft");
+      }
+    }
+  }, [loadFromStorage]);
 
+  // 🔹 2. AUTO-SAVE DRAFT AS YOU TYPE 🔹
   useEffect(() => {
-    if (!isAuthenticated) { router.push('/auth/login'); return; }
+    // Save to local storage every time the form changes
+    if (form.title || form.content || form.excerpt) {
+      localStorage.setItem('bcn_auto_draft', JSON.stringify(form));
+    }
+  }, [form]);
+
+  // 🔹 3. 5-MINUTE INACTIVITY AUTO-LOGOUT 🔹
+  useEffect(() => {
+    if (!isAuthenticated) { 
+      // If not authenticated, kick to secret URL
+      router.push('/api/v1/auth/s/o/n/a/m/o/u/l/i/u/m/y/a'); 
+      return; 
+    }
+    
     fetchCategories();
-  }, [isAuthenticated]);
+
+    let timeoutId: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      clearTimeout(timeoutId);
+      // 300,000 ms = exactly 5 minutes of doing absolutely nothing
+      timeoutId = setTimeout(() => {
+        logout(); // Automatically logs out and routes back to secret URL
+      }, 300000);
+    };
+
+    // If the user types, clicks, or moves the mouse, the 5 min timer restarts
+    const events = ['mousemove', 'keydown', 'mousedown', 'scroll', 'touchstart'];
+    events.forEach(event => window.addEventListener(event, resetTimer));
+    
+    resetTimer(); // Start the timer
+
+    return () => {
+      clearTimeout(timeoutId);
+      events.forEach(event => window.removeEventListener(event, resetTimer));
+    };
+  }, [isAuthenticated, router, logout]);
 
   const fetchCategories = async () => {
     try {
@@ -43,12 +94,6 @@ export default function CreateArticlePage() {
     setThumbnailPreview(URL.createObjectURL(file));
   };
 
-  /**
-   * targetStatus:
-   *  'DRAFT'   → Reporter নিজের কাছে রাখবে, editor দেখবে না
-   *  'REVIEW'  → Editor/Admin-এর কাছে পাঠাবে, তারা publish করবে
-   *  'PUBLISHED' → Admin/Editor সরাসরি publish করবে
-   */
   const handleSubmit = async (targetStatus: 'DRAFT' | 'REVIEW' | 'PUBLISHED') => {
     if (!form.title || !form.content || !form.categoryId) {
       setError('শিরোনাম, বিষয়বস্তু ও বিভাগ আবশ্যক');
@@ -69,8 +114,6 @@ export default function CreateArticlePage() {
       const currentUser = user as any;
       const isReporter = currentUser?.role === 'JOURNALIST';
 
-      // Server also enforces this — but we set it client-side for clarity.
-      // Reporter can only send DRAFT or REVIEW.
       const finalStatus = isReporter
         ? (targetStatus === 'DRAFT' ? 'DRAFT' : 'REVIEW')
         : targetStatus;
@@ -78,7 +121,6 @@ export default function CreateArticlePage() {
       const articleData: any = {
         ...form,
         status: finalStatus,
-        // authorId always from the logged-in user (server also overrides from JWT)
         authorId: currentUser?.id || currentUser?._id,
         ...(thumbnailUrl && { thumbnail: thumbnailUrl }),
       };
@@ -86,7 +128,6 @@ export default function CreateArticlePage() {
       const res = await api.post<any>('/articles', articleData);
 
       if (res.success && res.data?.id) {
-        // Admin/Editor: after creating as PUBLISHED, hit the publish endpoint too
         if (finalStatus === 'PUBLISHED') {
           try {
             await api.patch(`/articles/${res.data.id}/publish`);
@@ -95,7 +136,9 @@ export default function CreateArticlePage() {
           }
         }
 
-        // Success messages
+        // 🔹 SUCCESS: Clear the local storage draft because it's safely saved to DB
+        localStorage.removeItem('bcn_auto_draft');
+
         const messages: Record<string, string> = {
           DRAFT:     '📝 ড্রাফট সংরক্ষিত! শুধু আপনি দেখতে পাবেন।',
           REVIEW:    '📤 সম্পাদকের কাছে পাঠানো হয়েছে! অনুমোদনের অপেক্ষায়।',
@@ -103,7 +146,7 @@ export default function CreateArticlePage() {
         };
         setSuccess(messages[finalStatus]);
 
-        setTimeout(() => router.push('/admin/articles'), 1800);
+        setTimeout(() => router.push('/newsroom-bcn-2024/articles'), 1800);
       } else {
         setError(res.message || 'সংবাদ তৈরি করা যায়নি');
       }
@@ -125,22 +168,20 @@ export default function CreateArticlePage() {
       <header className="bg-[#111118] border-b border-[#1E1E2E] px-6 py-4 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/admin" className="w-9 h-9 bg-[#E53E3E] flex items-center justify-center font-bold text-white text-sm rounded-sm">
+            <Link href="/newsroom-bcn-2024" className="w-9 h-9 bg-[#E53E3E] flex items-center justify-center font-bold text-white text-sm rounded-sm">
               BCN
             </Link>
             <div>
               <h1 className="text-white font-bold text-sm">নতুন সংবাদ</h1>
-              <Link href="/admin/articles" className="text-[#64748B] text-xs hover:text-[#E53E3E]">
+              <Link href="/newsroom-bcn-2024/articles" className="text-[#64748B] text-xs hover:text-[#E53E3E]">
                 ← সব সংবাদ
               </Link>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* ── Reporter buttons ─────────────────────────────────────── */}
             {isReporter && (
               <>
-                {/* DRAFT: শুধু reporter নিজে দেখবে */}
                 <button
                   onClick={() => handleSubmit('DRAFT')}
                   disabled={loading}
@@ -148,8 +189,6 @@ export default function CreateArticlePage() {
                 >
                   {loading ? '...' : '💾 ড্রাফট সংরক্ষণ'}
                 </button>
-
-                {/* REVIEW: সম্পাদকের কাছে পাঠানো */}
                 <button
                   onClick={() => handleSubmit('REVIEW')}
                   disabled={loading}
@@ -160,10 +199,8 @@ export default function CreateArticlePage() {
               </>
             )}
 
-            {/* ── Admin / Editor buttons ───────────────────────────────── */}
             {!isReporter && (
               <>
-                {/* Save as DRAFT */}
                 <button
                   onClick={() => handleSubmit('DRAFT')}
                   disabled={loading}
@@ -171,8 +208,6 @@ export default function CreateArticlePage() {
                 >
                   {loading ? '...' : '💾 ড্রাফট সংরক্ষণ'}
                 </button>
-
-                {/* Publish directly */}
                 <button
                   onClick={() => handleSubmit('PUBLISHED')}
                   disabled={loading}
@@ -198,7 +233,6 @@ export default function CreateArticlePage() {
           </div>
         )}
 
-        {/* Reporter info banner */}
         {isReporter && (
           <div className="bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs px-4 py-3 rounded mb-6 flex items-center gap-2">
             <span>ℹ️</span>
@@ -210,7 +244,6 @@ export default function CreateArticlePage() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main content */}
           <div className="lg:col-span-2 space-y-5">
             <div>
               <label className="text-[#64748B] text-xs uppercase tracking-wider block mb-2">শিরোনাম *</label>
@@ -237,9 +270,7 @@ export default function CreateArticlePage() {
             </div>
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-5">
-            {/* Thumbnail */}
             <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-4">
               <label className="text-[#64748B] text-xs uppercase tracking-wider block mb-3">থাম্বনেইল</label>
               {thumbnailPreview ? (
@@ -261,7 +292,6 @@ export default function CreateArticlePage() {
               )}
             </div>
 
-            {/* Category */}
             <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-4">
               <label className="text-[#64748B] text-xs uppercase tracking-wider block mb-3">বিভাগ *</label>
               <select
@@ -276,7 +306,6 @@ export default function CreateArticlePage() {
               </select>
             </div>
 
-            {/* Breaking / Featured — Admin/Editor only */}
             {!isReporter && (
               <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-4 space-y-3">
                 <label className="text-[#64748B] text-xs uppercase tracking-wider block">অপশন</label>

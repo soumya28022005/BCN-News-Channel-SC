@@ -1,6 +1,7 @@
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import SharedNewsLayout from '../components/news/SharedNewsLayout';
+import SponsorPopup from '../components/news/SponsorPopup'; 
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
@@ -10,12 +11,14 @@ async function getArticles() {
     return (await res.json()).data || [];
   } catch { return []; }
 }
+
 async function getBreaking() {
   try {
     const res = await fetch(`${API}/articles/breaking`, { next: { revalidate: 30 } });
     return (await res.json()).data || [];
   } catch { return []; }
 }
+
 async function getTrending() {
   try {
     const res = await fetch(`${API}/articles/trending`, { next: { revalidate: 120 } });
@@ -28,10 +31,8 @@ export default async function HomePage() {
 
   return (
     <>
+      <SponsorPopup /> 
       <Header />
-      {/* This uses the shared component. No duplicate code! 
-        Any styling changes made in SharedNewsLayout will apply here automatically.
-      */}
       <SharedNewsLayout 
         articles={articles} 
         breaking={breaking} 

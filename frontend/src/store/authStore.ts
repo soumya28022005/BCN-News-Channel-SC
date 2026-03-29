@@ -56,6 +56,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     set({ user: null, accessToken: null, isAuthenticated: false });
+    
+    // Sends the user exactly to the login page upon manual or auto-logout
     window.location.href = '/auth/login';
   },
 
