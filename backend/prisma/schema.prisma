@@ -1,0 +1,509 @@
+// BCN – The Bengal Chronicle Network
+// Prisma Schema - Production Database Design
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ─────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  JOURNALIST
+  EDITOR
+  USER
+}
+
+enum ArticleStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  SCHEDULED
+  ARCHIVED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+}
+
+// ─────────────────────────────────────────
+// USERS
+// ─────────────────────────────────────────
+
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  password         String
+  name             String
+  username         String    @unique
+  avatar           String?
+  bio              String?
+  role             Role      @default(USER)
+  isVerified       Boolean   @default(false)
+  isActive         Boolean   @default(true)
+  refreshToken     String?
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  lastLogin        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  articles         Article[] @relation("ArticleAuthor")
+  editedArticles   Article[] @relation("ArticleEditor")
+  
+  // 🔹 নতুন: রিভিশন হিস্ট্রির রিলেশন
+  articleRevisions ArticleRevision[] 
+  
+  comments         Comment[]
+  likes            Like[]
+  bookmarks        Bookmark[]
+  authorProfile    AuthorProfile?
+  newsletter       Newsletter?
+  sessions         Session[]
+
+  @@index([email])
+  @@index([username])
+  @@map("users")
+}
+
+// ─────────────────────────────────────────
+// AUTHOR PROFILE
+// ─────────────────────────────────────────
+
+model AuthorProfile {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String?
+  expertise     String[]
+  twitter       String?
+  linkedin      String?
+  website       String?
+  articlesCount Int      @default(0)
+  totalViews    BigInt   @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("author_profiles")
+}
+
+// ─────────────────────────────────────────
+// CATEGORIES
+// ─────────────────────────────────────────
+
+model Category {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  slug        String     @unique
+  description String?
+  color       String?
+  icon        String?
+  image       String?
+  parentId    String?
+  parent      Category?  @relation("SubCategories", fields: [parentId], references: [id])
+  children    Category[] @relation("SubCategories")
+  isActive    Boolean    @default(true)
+  sortOrder   Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  articles Article[]
+  seoMeta  SeoMetadata?
+
+  @@index([slug])
+  @@map("categories")
+}
+
+// ─────────────────────────────────────────
+// TAGS
+// ─────────────────────────────────────────
+
+model Tag {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  color       String?
+  usageCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  articles ArticleTag[]
+
+  @@index([slug])
+  @@map("tags")
+}
+
+// ─────────────────────────────────────────
+// ARTICLES
+// ─────────────────────────────────────────
+
+model Article {
+  id               String  @id @default(cuid())
+  title            String
+  slug             String  @unique
+  excerpt          String?
+  content          String
+  thumbnail        String?
+  thumbnailAlt     String?
+  thumbnailCaption String?
+
+  status      ArticleStatus @default(DRAFT)
+  isBreaking  Boolean       @default(false)
+  isFeatured  Boolean       @default(false)
+  isTrending  Boolean       @default(false)
+  publishedAt DateTime?
+  scheduledAt DateTime?
+
+  authorId     String
+  author       User     @relation("ArticleAuthor", fields: [authorId], references: [id])
+  lastEditorId String?
+  lastEditor   User?    @relation("ArticleEditor", fields: [lastEditorId], references: [id])
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  viewCount    BigInt @default(0)
+  likeCount    Int    @default(0)
+  commentCount Int    @default(0)
+  shareCount   Int    @default(0)
+  readingTime  Int?
+
+  language String  @default("en")
+  location String?
+  source   String?
+
+  seoTitle         String?
+  seoDescription   String?
+  seoKeywords      String[]
+  canonicalUrl     String?
+  noIndex          Boolean  @default(false)
+  seoScore         Int?
+  readabilityScore Int?
+
+  articleSchema Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 🔹 নতুন: রিভিশন হিস্ট্রির রিলেশন
+  revisions       ArticleRevision[]
+
+  tags            ArticleTag[]
+  comments        Comment[]
+  likes           Like[]
+  bookmarks       Bookmark[]
+  media           ArticleMedia[]
+  views           ArticleView[]
+  seoMeta         SeoMetadata?
+  relatedArticles ArticleRelation[] @relation("ArticleFrom")
+  relatedTo       ArticleRelation[] @relation("ArticleTo")
+  analytics       ArticleAnalytics?
+
+  @@index([slug])
+  @@index([status, publishedAt])
+  @@index([categoryId])
+  @@index([authorId])
+  @@index([isBreaking])
+  @@index([isFeatured])
+  @@index([isTrending])
+  @@map("articles")
+}
+
+// ─────────────────────────────────────────
+// ARTICLE-TAG JUNCTION
+// ─────────────────────────────────────────
+
+model ArticleTag {
+  articleId String
+  tagId     String
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, tagId])
+  @@map("article_tags")
+}
+
+// ─────────────────────────────────────────
+// RELATED ARTICLES
+// ─────────────────────────────────────────
+
+model ArticleRelation {
+  fromId String
+  toId   String
+  score  Float   @default(0)
+  from   Article @relation("ArticleFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to     Article @relation("ArticleTo", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@id([fromId, toId])
+  @@map("article_relations")
+}
+
+// ─────────────────────────────────────────
+// COMMENTS
+// ─────────────────────────────────────────
+
+model Comment {
+  id         String    @id @default(cuid())
+  content    String
+  articleId  String
+  article    Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  authorId   String
+  author     User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parentId   String?
+  parent     Comment?  @relation("Replies", fields: [parentId], references: [id])
+  replies    Comment[] @relation("Replies")
+  isApproved Boolean   @default(false)
+  likeCount  Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([articleId])
+  @@index([authorId])
+  @@map("comments")
+}
+
+// ─────────────────────────────────────────
+// LIKES
+// ─────────────────────────────────────────
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  articleId String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, articleId])
+  @@map("likes")
+}
+
+// ─────────────────────────────────────────
+// BOOKMARKS
+// ─────────────────────────────────────────
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  articleId String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, articleId])
+  @@map("bookmarks")
+}
+
+// ─────────────────────────────────────────
+// ARTICLE VIEWS
+// ─────────────────────────────────────────
+
+model ArticleView {
+  id        String   @id @default(cuid())
+  articleId String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  userId    String?
+  ipAddress String?
+  userAgent String?
+  referrer  String?
+  country   String?
+  device    String?
+  duration  Int?
+  createdAt DateTime @default(now())
+
+  @@index([articleId])
+  @@index([createdAt])
+  @@map("article_views")
+}
+
+// ─────────────────────────────────────────
+// ARTICLE ANALYTICS
+// ─────────────────────────────────────────
+
+model ArticleAnalytics {
+  id             String   @id @default(cuid())
+  articleId      String   @unique
+  article        Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  totalViews     BigInt   @default(0)
+  uniqueViews    BigInt   @default(0)
+  avgReadTime    Float?
+  bounceRate     Float?
+  socialShares   Int      @default(0)
+  organicTraffic Int      @default(0)
+  updatedAt      DateTime @updatedAt
+
+  @@map("article_analytics")
+}
+
+// ─────────────────────────────────────────
+// MEDIA
+// ─────────────────────────────────────────
+
+model Media {
+  id           String    @id @default(cuid())
+  filename     String
+  originalName String
+  url          String
+  publicId     String?
+  type         MediaType @default(IMAGE)
+  size         Int?
+  width        Int?
+  height       Int?
+  alt          String?
+  caption      String?
+  uploadedBy   String
+  createdAt    DateTime  @default(now())
+
+  articles ArticleMedia[]
+
+  @@map("media")
+}
+
+model ArticleMedia {
+  articleId String
+  mediaId   String
+  sortOrder Int     @default(0)
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  media     Media   @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, mediaId])
+  @@map("article_media")
+}
+
+// ─────────────────────────────────────────
+// SEO METADATA
+// ─────────────────────────────────────────
+
+model SeoMetadata {
+  id         String    @id @default(cuid())
+  articleId  String?   @unique
+  article    Article?  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  categoryId String?   @unique
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  title        String?
+  description  String?
+  keywords     String[]
+  canonicalUrl String?
+
+  ogTitle       String?
+  ogDescription String?
+  ogImage       String?
+  ogType        String  @default("article")
+
+  twitterTitle       String?
+  twitterDescription String?
+  twitterImage       String?
+  twitterCard        String  @default("summary_large_image")
+
+  jsonLd           Json?
+  seoScore         Int?
+  readabilityScore Int?
+  keywordDensity   Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("seo_metadata")
+}
+
+// ─────────────────────────────────────────
+// NEWSLETTER
+// ─────────────────────────────────────────
+
+model Newsletter {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  userId     String?  @unique
+  user       User?    @relation(fields: [userId], references: [id])
+  isActive   Boolean  @default(true)
+  categories String[]
+  createdAt  DateTime @default(now())
+
+  @@index([email])
+  @@map("newsletter")
+}
+
+// ─────────────────────────────────────────
+// SESSIONS
+// ─────────────────────────────────────────
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  device    String?
+  ipAddress String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+  @@map("sessions")
+}
+
+// ─────────────────────────────────────────
+// SITE SETTINGS
+// ─────────────────────────────────────────
+
+model SiteSettings {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+// ─────────────────────────────────────────
+// BREAKING NEWS TICKER
+// ─────────────────────────────────────────
+
+model BreakingNewsTicker {
+  id        String    @id @default(cuid())
+  text      String
+  url       String?
+  isActive  Boolean   @default(true)
+  priority  Int       @default(0)
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@map("breaking_news_tickers")
+}
+
+// ─────────────────────────────────────────
+// ARTICLE REVISIONS (কে কী চেঞ্জ করেছে তার রেকর্ড)
+// ─────────────────────────────────────────
+
+model ArticleRevision {
+  id         String   @id @default(cuid())
+  articleId  String
+  article    Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  
+  editorId   String
+  editor     User     @relation(fields: [editorId], references: [id])
+  
+  oldTitle   String?
+  newTitle   String?
+  
+  oldContent String?  @db.Text
+  newContent String?  @db.Text
+  
+  createdAt  DateTime @default(now())
+
+  @@index([articleId])
+  @@map("article_revisions")
+}
