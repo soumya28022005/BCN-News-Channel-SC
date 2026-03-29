@@ -110,7 +110,12 @@ export default function AdminArticlesPage() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0F]">
-      <header className="bg-[#111118] border-b border-[#1E1E2E] px-6 py-4">
+      <header className="style={{
+  background: 'rgba(10, 26, 58, 0.75)',
+  backdropFilter: 'blur(10px)',
+  borderBottom: '1px solid rgba(212,175,55,0.15)',
+  boxShadow: scrolled ? '0 8px 30px rgba(0,0,0,0.4)' : 'none',
+}}">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/admin" className="w-9 h-9 bg-[#E53E3E] flex items-center justify-center font-bold text-white text-sm rounded-sm">
@@ -193,6 +198,7 @@ export default function AdminArticlesPage() {
                       label: article.status,
                       classes: 'bg-gray-500/10 text-gray-400',
                     };
+
 
                     return (
                       <tr key={article.id} className="hover:bg-[#1E1E2E]/30 transition-colors group">

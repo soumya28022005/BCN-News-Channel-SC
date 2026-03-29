@@ -5,14 +5,17 @@
 
 /* ── Light mode (default) ── */
 :root {
-  --gold: #C9A227;
-  --gold-light: #E8C547;
-  --gold-dim: rgba(201,162,39,0.15);
-  --gold-line: rgba(201,162,39,0.25);
+  /* GOLD SYSTEM */
+  --gold: #D4AF37;
+  --gold-light: #FFC857;
+  --gold-dim: rgba(212,175,55,0.12);
+  --gold-line: rgba(212,175,55,0.25);
 
+  /* LIGHT MODE (clean newspaper feel) */
   --bg: #F8F6F1;
   --bg2: #FFFFFF;
-  --bg3: #F0EDE6;
+  --bg3: #F1EEE8;
+
   --border: #E2DDD4;
   --card: #FFFFFF;
   --card2: #F5F2EC;
@@ -22,35 +25,42 @@
   --muted: #7A7060;
   --muted2: #A09880;
 
-  --accent: #C9A227;
+  --accent: #D4AF37;
   --accent-red: #B91C1C;
   --accent-red2: #991B1B;
 }
 
-/* ── Dark mode ── */
+/* ───────── DARK MODE (🔥 MAIN BRAND) ───────── */
 html.dark {
-  --bg: #0A0C0B;
-  --bg2: #111410;
-  --bg3: #161A15;
-  --border: rgba(201,162,39,0.15);
-  --card: #141810;
-  --card2: #1A1F18;
+  /* CORE BACKGROUND */
+  --bg: #0A1A3A;
+  --bg2: #0F2147;
+  --bg3: #111C44;
 
-  --text: #EDE8DE;
-  --text2: #C8C0A8;
-  --muted: #7A7060;
-  --muted2: #5A5448;
+  /* CARDS */
+  --card: #0F2147;
+  --card2: #1A2E5A;
 
+  /* BORDER */
+  --border: #1F2F5A;
+
+  /* TEXT */
+  --text: #FFFFFF;
+  --text2: #B8C1EC;
+  --muted: #7A86B6;
+  --muted2: #5A6AA3;
+
+  /* ACCENTS */
   --accent: #D4AF37;
-  --accent-red: #DC2626;
-  --accent-red2: #B91C1C;
+  --accent-red: #FF3B30;
+  --accent-red2: #DC2626;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 
 body {
-  background: var(--bg);
+  background: radial-gradient(circle at top, #1A2E5A, #0A1A3A);
   color: var(--text);
   font-family: var(--font-bangla), 'Tiro Bangla', Georgia, serif;
   line-height: 1.75;
@@ -69,32 +79,70 @@ h1,h2,h3,h4,h5,h6 {
 }
 
 /* Gold divider */
+/* Divider */
 .gold-line {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--gold) 30%, var(--gold) 70%, transparent);
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(212,175,55,0.9),
+    transparent
+  );
+  box-shadow: 0 0 10px rgba(212,175,55,0.4);
+}
+
+/* Text glow */
+.gold-glow {
+  text-shadow: 0 0 10px rgba(212,175,55,0.4);
 }
 
 /* Section title */
 .section-title {
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: var(--text);
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--gold);
-  display: inline-block;
-  margin-bottom: 1.25rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  padding-left: 10px;
+  border-left: 4px solid var(--gold);
+  margin-bottom: 1.5rem;
+  letter-spacing: 0.05em;
 }
 
 /* Card hover */
 .card-hover {
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  background: var(--card);
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+  border-radius: 14px;
 }
+
 .card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(201,162,39,0.12);
-  border-color: rgba(201,162,39,0.35) !important;
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+  border-color: var(--gold);
+}
+
+.glass {
+  background: rgba(15, 33, 71, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(212,175,55,0.2);
+}
+.gold-glow {
+  text-shadow: 0 0 10px rgba(212,175,55,0.4);
+}
+
+.nav-glass {
+  background: rgba(10, 26, 58, 0.7);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(212,175,55,0.2);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at top, rgba(212,175,55,0.08), transparent 60%);
+  pointer-events: none;
+  z-index: -1;
 }
 
 /* Ticker */
@@ -118,7 +166,22 @@ h1,h2,h3,h4,h5,h6 {
 
 /* Img overlay */
 .img-overlay {
-  background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.3) 55%, transparent 100%);
+  background: linear-gradient(
+    to top,
+    rgba(10, 26, 58, 0.95) 0%,
+    rgba(10, 26, 58, 0.7) 40%,
+    rgba(10, 26, 58, 0.3) 70%,
+    transparent 100%
+  );
+}
+
+.hero-glow {
+  box-shadow: 0 0 0 1px rgba(212,175,55,0.15);
+  transition: all 0.3s ease;
+}
+
+.hero-glow:hover {
+  box-shadow: 0 0 25px rgba(212,175,55,0.25);
 }
 
 /* Article content */

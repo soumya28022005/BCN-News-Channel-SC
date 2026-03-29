@@ -16,12 +16,13 @@ export default function HeroSection({ featured, secondary }: HeroSectionProps) {
         {/* Main featured */}
         <div className="lg:col-span-2">
           <Link href={`/news/${featured.slug}`} className="group block article-card">
-            <div className="relative h-80 lg:h-[420px] bg-[#111118] rounded-lg overflow-hidden">
+            <div className="relative h-[300px] lg:h-[420px] rounded-xl overflow-hidden group hero-glow"
+     style={{ background: 'var(--bg2)' }}>
               {featured.thumbnail ? (
                 <img
                   src={featured.thumbnail}
                   alt={featured.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-[#1E1E2E] to-[#111118] flex items-center justify-center">
@@ -31,20 +32,24 @@ export default function HeroSection({ featured, secondary }: HeroSectionProps) {
               <div className="absolute inset-0 img-overlay" />
               <div className="absolute bottom-0 left-0 right-0 p-6">
                 {featured.category && (
-                  <span className="inline-block bg-[#E53E3E] text-white text-xs px-2 py-1 rounded mb-3 uppercase tracking-wider font-medium">
+                  <span
+  className="inline-block text-xs px-2 py-1 rounded mb-3 uppercase tracking-wider font-semibold"
+  style={{
+    background: 'rgba(212,175,55,0.15)',
+    color: 'var(--gold)'
+  }}
+>
                     {featured.category.name}
                   </span>
                 )}
-                <h1
-                  className="text-2xl lg:text-3xl font-bold text-white leading-tight mb-2 group-hover:text-[#F6AD55] transition-colors"
-                  style={{ fontFamily: 'var(--font-playfair)' }}
-                >
+                <h1 className="text-2xl lg:text-3xl font-bold text-white leading-tight mb-2 transition-all duration-300 group-hover:text-[var(--gold)]"
+                  >
                   {featured.title}
                 </h1>
                 {featured.excerpt && (
-                  <p className="text-[#94A3B8] text-sm line-clamp-2">{featured.excerpt}</p>
+                  <p className="text-[var(--text2)] text-sm line-clamp-2"></p>
                 )}
-                <div className="flex items-center gap-3 mt-3 text-xs text-[#64748B]">
+                <div className="flex items-center gap-3 mt-3 text-xs text-[var(--muted)]">
                   <span>{featured.author?.name}</span>
                   <span>•</span>
                   <span>{timeAgo(featured.publishedAt || featured.createdAt)}</span>
@@ -63,6 +68,8 @@ export default function HeroSection({ featured, secondary }: HeroSectionProps) {
           ))}
         </div>
       </div>
+      <div className="mt-6 gold-line opacity-50" />
     </section>
+  
   );
 }

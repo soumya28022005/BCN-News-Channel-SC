@@ -44,7 +44,10 @@ export default async function HomePage() {
 
         {/* Breaking ticker */}
         {breaking.length > 0 && (
-          <div style={{ background:'var(--accent-red)', borderBottom:'2px solid var(--gold)' }} className="py-2 overflow-hidden">
+          <div style={{
+  background: 'linear-gradient(90deg, #DC2626, #991B1B)',
+  boxShadow: '0 2px 10px rgba(220,38,38,0.4)'
+}} className="py-2 overflow-hidden">
             <div className="flex items-center">
               <span className="shrink-0 px-4 text-xs font-black tracking-widest uppercase flex items-center gap-2 text-white" style={{ borderRight:'1px solid rgba(255,255,255,0.2)', minWidth:'7rem' }}>
                 <span className="live-dot w-2 h-2 rounded-full bg-yellow-300 inline-block" />
@@ -155,7 +158,7 @@ export default async function HomePage() {
 
             {/* Trending */}
             <section>
-              <div className="section-title">🔥 ট্রেন্ডিং</div>
+              <div className="">🔥 ট্রেন্ডিং</div>
               <div>
                 {trending.slice(0, 8).map((a: any, i: number) => (
                   <Link key={a.id} href={`/news/${a.slug}`} className="group flex gap-3 items-start py-4"
