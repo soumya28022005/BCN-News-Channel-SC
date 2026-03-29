@@ -13,7 +13,6 @@ async function getArticle(slug: string) {
     });
     if (!res.ok) return null;
     const data = await res.json();
-    // Data structure check korchi
     return data.data?.article || data.data || data;
   } catch (err) { 
     console.error("Fetch Error:", err);
@@ -44,7 +43,6 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   const { slug } = await params;
   const [article, related] = await Promise.all([getArticle(slug), getRelated(slug)]);
 
-  // Jodi article na thake ba title na thake
   if (!article || !article.title) {
     return notFound();
   }
@@ -52,24 +50,33 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-[#0A0A0F] text-white">
+      {/* 1. Main Background fixed using var(--bg) and var(--text) */}
+      <main className="min-h-screen transition-colors duration-300" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <article className="lg:col-span-2">
-              <div className="flex items-center gap-2 mb-4">
+              
+              <div className="flex items-center gap-3 mb-4">
                 {article.category && (
-                  <span className="bg-[#E53E3E] text-xs px-2 py-1 rounded">
+                  // 2. Category badge fixed using var(--accent-red)
+                  <span className="text-white text-xs px-2 py-1 rounded font-medium tracking-wide" style={{ background: 'var(--accent-red)' }}>
                     {article.category.name}
                   </span>
                 )}
+                {/* Added time alongside category for better layout */}
+                <span className="text-sm font-medium" style={{ color: 'var(--muted)' }}>
+                  {timeAgo(article.publishedAt || article.createdAt)}
+                </span>
               </div>
 
-              <h1 className="text-3xl lg:text-5xl font-bold mb-6 leading-tight">
+              {/* 3. Title fixed using var(--text) and Playfair font */}
+              <h1 className="text-3xl lg:text-5xl font-bold mb-6 leading-tight transition-colors" style={{ fontFamily: 'var(--font-playfair)', color: 'var(--text)' }}>
                 {article.title}
               </h1>
 
               {article.thumbnail && (
-                <div className="mb-8 rounded-xl overflow-hidden border border-[#1E1E2E]">
+                // 4. Border and background fixed using var(--border)
+                <div className="mb-8 rounded-xl overflow-hidden border transition-colors" style={{ borderColor: 'var(--border)', background: 'var(--bg3)' }}>
                   <img 
                     src={article.thumbnail} 
                     alt={article.title} 
@@ -78,22 +85,35 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
                 </div>
               )}
 
-              {/* Main Content Area */}
+              {/* 5. Main Content Area fixed by removing prose-invert and using your custom article-content class */}
               <div 
-                className="prose prose-invert max-w-none text-[#CBD5E1] text-lg leading-relaxed"
+                className="prose max-w-none text-lg leading-relaxed article-content transition-colors"
                 dangerouslySetInnerHTML={{ __html: article.content || '' }}
               />
             </article>
 
             {/* Sidebar */}
             <aside>
-              <h3 className="text-xl font-bold mb-4 border-l-4 border-[#E53E3E] pl-3">সম্পর্কিত সংবাদ</h3>
+              {/* 6. Sidebar heading border fixed using var(--accent-red) */}
+              <h3 className="text-xl font-bold mb-4 border-l-4 pl-3 transition-colors" style={{ borderColor: 'var(--accent-red)', color: 'var(--text)' }}>
+                সম্পর্কিত সংবাদ
+              </h3>
               <div className="space-y-4">
-                {related.map((item: any) => (
-                  <Link key={item.id} href={`/news/${item.slug}`} className="block group">
-                    <h4 className="group-hover:text-[#E53E3E] transition-colors">{item.title}</h4>
-                  </Link>
-                ))}
+                {related.length > 0 ? (
+                  related.map((item: any) => (
+                    <Link key={item.id} href={`/news/${item.slug}`} className="block group border-b pb-3 last:border-0" style={{ borderColor: 'var(--border)' }}>
+                      {/* 7. Sidebar links fixed to use var(--text) and hover gold */}
+                      <h4 className="transition-colors leading-snug font-medium group-hover:text-[var(--gold)]" style={{ color: 'var(--text)' }}>
+                        {item.title}
+                      </h4>
+                      <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>
+                        {timeAgo(item.publishedAt || item.createdAt)}
+                      </p>
+                    </Link>
+                  ))
+                ) : (
+                  <p className="text-sm" style={{ color: 'var(--muted)' }}>কোনো সম্পর্কিত সংবাদ পাওয়া যায়নি।</p>
+                )}
               </div>
             </aside>
           </div>
