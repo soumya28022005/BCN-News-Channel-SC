@@ -11,14 +11,12 @@ async function getArticles() {
     return (await res.json()).data || [];
   } catch { return []; }
 }
-
 async function getBreaking() {
   try {
     const res = await fetch(`${API}/articles/breaking`, { next: { revalidate: 30 } });
     return (await res.json()).data || [];
   } catch { return []; }
 }
-
 async function getTrending() {
   try {
     const res = await fetch(`${API}/articles/trending`, { next: { revalidate: 120 } });
@@ -33,11 +31,7 @@ export default async function HomePage() {
     <>
       <SponsorPopup /> 
       <Header />
-      <SharedNewsLayout 
-        articles={articles} 
-        breaking={breaking} 
-        trending={trending} 
-      />
+      <SharedNewsLayout articles={articles} breaking={breaking} trending={trending} />
       <Footer />
     </>
   );

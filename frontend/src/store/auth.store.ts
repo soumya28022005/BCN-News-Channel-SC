@@ -56,8 +56,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     set({ user: null, accessToken: null, isAuthenticated: false });
-    
-    // Using this path ensures it works perfectly on localhost AND your live domain!
     window.location.href = '/api/v1/auth/s/o/n/a/m/o/u/l/i/u/m/y/a';
   },
 

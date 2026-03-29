@@ -3,9 +3,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-// Using the @/ alias to avoid crazy relative paths!
-import { useAuthStore } from '@/store/authStore';
-import logo from '@/components/layout/logo/log.png'; 
+import { useAuthStore } from '../../../../../../../../../../../../../../../../../store/authStore';
+import logo from '../../../../../../../../../../../../../../../../../components/layout/logo/log.png';
 
 export default function SecretLoginPage() {
   const [email, setEmail] = useState('');

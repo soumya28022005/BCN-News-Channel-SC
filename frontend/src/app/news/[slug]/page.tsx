@@ -1,9 +1,12 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { Metadata } from 'next';
 import Header from '../../../components/layout/Header';
 import Footer from '../../../components/layout/Footer';
+import FixedAd from '@/components/news/FixedAd';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.bcnnetwork.in'; 
 
 async function getArticle(slug: string) {
   try {
@@ -39,6 +42,40 @@ function timeAgo(date: string) {
   return new Date(date).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
+// 🔹 SEO & SOCIAL MEDIA DISCORD EMBEDS 🔹
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const article = await getArticle(slug);
+
+  if (!article) return { title: 'Not Found | BCN News' };
+
+  const title = `${article.title} | BCN`;
+  const description = article.excerpt || article.title;
+  const imageUrl = article.thumbnail || `${SITE_URL}/default-share.jpg`; 
+  const articleUrl = `${SITE_URL}/news/${slug}`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: articleUrl,
+      siteName: 'BCN - The Bengal Chronicle Network',
+      images: [{ url: imageUrl, width: 1200, height: 630, alt: article.title }],
+      type: 'article',
+      publishedTime: article.publishedAt || article.createdAt,
+      authors: [article.author?.name || 'BCN Desk'],
+    },
+    twitter: {
+      card: 'summary_large_image', 
+      title,
+      description,
+      images: [imageUrl],
+    },
+  };
+}
+
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const [article, related] = await Promise.all([getArticle(slug), getRelated(slug)]);
@@ -47,62 +84,79 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     return notFound();
   }
 
+  // 🔹 JSON-LD STRUCTURED DATA FOR GOOGLE INDEXING 🔹
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    "headline": article.title,
+    "image": [article.thumbnail || `${SITE_URL}/default-share.jpg`],
+    "datePublished": article.publishedAt || article.createdAt,
+    "dateModified": article.updatedAt || article.createdAt,
+    "author": [{
+        "@type": "Person",
+        "name": article.author?.name || "BCN Desk",
+        "url": SITE_URL
+    }],
+    "publisher": {
+      "@type": "Organization",
+      "name": "BCN News",
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${SITE_URL}/logo.png`
+      }
+    },
+    "description": article.excerpt || article.title
+  };
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Header />
-      {/* 1. Main Background fixed using var(--bg) and var(--text) */}
+      
       <main className="min-h-screen transition-colors duration-300" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            {/* ARTICLE CONTENT */}
             <article className="lg:col-span-2">
-              
               <div className="flex items-center gap-3 mb-4">
                 {article.category && (
-                  // 2. Category badge fixed using var(--accent-red)
                   <span className="text-white text-xs px-2 py-1 rounded font-medium tracking-wide" style={{ background: 'var(--accent-red)' }}>
                     {article.category.name}
                   </span>
                 )}
-                {/* Added time alongside category for better layout */}
                 <span className="text-sm font-medium" style={{ color: 'var(--muted)' }}>
                   {timeAgo(article.publishedAt || article.createdAt)}
                 </span>
               </div>
 
-              {/* 3. Title fixed using var(--text) and Playfair font */}
               <h1 className="text-3xl lg:text-5xl font-bold mb-6 leading-tight transition-colors" style={{ fontFamily: 'var(--font-playfair)', color: 'var(--text)' }}>
                 {article.title}
               </h1>
 
               {article.thumbnail && (
-                // 4. Border and background fixed using var(--border)
                 <div className="mb-8 rounded-xl overflow-hidden border transition-colors" style={{ borderColor: 'var(--border)', background: 'var(--bg3)' }}>
-                  <img 
-                    src={article.thumbnail} 
-                    alt={article.title} 
-                    className="w-full h-auto object-cover"
-                  />
+                  <img src={article.thumbnail} alt={article.title} className="w-full h-auto object-cover" />
                 </div>
               )}
 
-              {/* 5. Main Content Area fixed by removing prose-invert and using your custom article-content class */}
+              {/* 🔹 Fixed Article Image Overflow via prose-img classes 🔹 */}
               <div 
-                className="prose max-w-none text-lg leading-relaxed article-content transition-colors"
+                className="prose max-w-none text-lg leading-relaxed article-content transition-colors prose-img:rounded-xl prose-img:w-full prose-img:shadow-md"
                 dangerouslySetInnerHTML={{ __html: article.content || '' }}
               />
             </article>
 
-            {/* Sidebar */}
+            {/* SIDEBAR */}
             <aside>
-              {/* 6. Sidebar heading border fixed using var(--accent-red) */}
               <h3 className="text-xl font-bold mb-4 border-l-4 pl-3 transition-colors" style={{ borderColor: 'var(--accent-red)', color: 'var(--text)' }}>
                 সম্পর্কিত সংবাদ
               </h3>
+              
               <div className="space-y-4">
                 {related.length > 0 ? (
                   related.map((item: any) => (
                     <Link key={item.id} href={`/news/${item.slug}`} className="block group border-b pb-3 last:border-0" style={{ borderColor: 'var(--border)' }}>
-                      {/* 7. Sidebar links fixed to use var(--text) and hover gold */}
                       <h4 className="transition-colors leading-snug font-medium group-hover:text-[var(--gold)]" style={{ color: 'var(--text)' }}>
                         {item.title}
                       </h4>
@@ -112,9 +166,13 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
                     </Link>
                   ))
                 ) : (
-                  <p className="text-sm" style={{ color: 'var(--muted)' }}>কোনো সম্পর্কিত সংবাদ পাওয়া যায়নি।</p>
+                  <p className="text-sm" style={{ color: 'var(--muted)' }}>কোনো সম্পর্কিত সংবাদ পাওয়া যায়নি।</p>
                 )}
               </div>
+
+              {/* 🔹 MULTIPLE FIXED SIDEBAR ADS APPEAR HERE 🔹 */}
+              <FixedAd />
+              
             </aside>
           </div>
         </div>

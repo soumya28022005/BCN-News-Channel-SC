@@ -14,6 +14,8 @@ export const createArticleSchema = z.object({
     seoTitle: z.string().max(70).optional(),
     seoDescription: z.string().max(170).optional(),
     seoKeywords: z.array(z.string()).optional(),
+    // 🔹 ADD THIS LINE TO ALLOW SOURCE LINKS
+    source: z.string().optional(), 
   }),
 });
 

@@ -28,6 +28,7 @@ import searchRoutes from './routes/search.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import newsletterRoutes from './routes/newsletter.routes';
 import sitemapRoutes from './routes/sitemap.routes';
+import sponsorRoutes from './routes/sponsor.routes'
 
 const app = express();
 const httpServer = createServer(app);
@@ -91,6 +92,8 @@ app.use(`${API}/analytics`, analyticsRoutes);
 app.use(`${API}/newsletter`, newsletterRoutes);
 app.use(sitemapRoutes);
 
+app.use('/api/v1/sponsor', sponsorRoutes);
+
 // ─── Error Handling ────────────────────────────────────────────────
 app.use(notFound);
 app.use(errorHandler);
@@ -143,3 +146,5 @@ process.on('uncaughtException', (error) => {
 
 export default app;// BigInt serialization fix
 (BigInt.prototype as any).toJSON = function() { return this.toString(); };
+
+

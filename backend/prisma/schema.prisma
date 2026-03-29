@@ -507,3 +507,15 @@ model ArticleRevision {
   @@index([articleId])
   @@map("article_revisions")
 }
+
+model Sponsor {
+  id        String   @id @default(cuid())
+  title     String?
+  linkUrl   String?
+  imageUrl  String
+  isActive  Boolean  @default(false)
+  position  String   @default("POPUP") 
+  duration  Int      @default(5) 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
