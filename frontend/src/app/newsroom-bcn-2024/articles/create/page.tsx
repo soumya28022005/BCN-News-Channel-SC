@@ -16,6 +16,7 @@ export default function CreateArticlePage() {
   const [form, setForm] = useState({
     title: '', excerpt: '', content: '', categoryId: '',
     isBreaking: false, isFeatured: false,
+    source: '', // 🔹 CHANGE 1: Added source to initial state
   });
   
   const [thumbnail, setThumbnail] = useState<File | null>(null);
@@ -41,7 +42,7 @@ export default function CreateArticlePage() {
   // 🔹 2. AUTO-SAVE DRAFT AS YOU TYPE 🔹
   useEffect(() => {
     // Save to local storage every time the form changes
-    if (form.title || form.content || form.excerpt) {
+    if (form.title || form.content || form.excerpt || form.source) {
       localStorage.setItem('bcn_auto_draft', JSON.stringify(form));
     }
   }, [form]);
@@ -121,6 +122,7 @@ export default function CreateArticlePage() {
       const articleData: any = {
         ...form,
         status: finalStatus,
+        // authorId always from the logged-in user (server also overrides from JWT)
         authorId: currentUser?.id || currentUser?._id,
         ...(thumbnailUrl && { thumbnail: thumbnailUrl }),
       };
@@ -182,6 +184,7 @@ export default function CreateArticlePage() {
           <div className="flex items-center gap-3">
             {isReporter && (
               <>
+                {/* DRAFT: শুধু reporter নিজে দেখবে */}
                 <button
                   onClick={() => handleSubmit('DRAFT')}
                   disabled={loading}
@@ -189,6 +192,8 @@ export default function CreateArticlePage() {
                 >
                   {loading ? '...' : '💾 ড্রাফট সংরক্ষণ'}
                 </button>
+
+                {/* REVIEW: সম্পাদকের কাছে পাঠানো */}
                 <button
                   onClick={() => handleSubmit('REVIEW')}
                   disabled={loading}
@@ -199,8 +204,10 @@ export default function CreateArticlePage() {
               </>
             )}
 
+            {/* ── Admin / Editor buttons ───────────────────────────────── */}
             {!isReporter && (
               <>
+                {/* Save as DRAFT */}
                 <button
                   onClick={() => handleSubmit('DRAFT')}
                   disabled={loading}
@@ -208,6 +215,8 @@ export default function CreateArticlePage() {
                 >
                   {loading ? '...' : '💾 ড্রাফট সংরক্ষণ'}
                 </button>
+
+                {/* Publish directly */}
                 <button
                   onClick={() => handleSubmit('PUBLISHED')}
                   disabled={loading}
@@ -233,6 +242,7 @@ export default function CreateArticlePage() {
           </div>
         )}
 
+        {/* Reporter info banner */}
         {isReporter && (
           <div className="bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs px-4 py-3 rounded mb-6 flex items-center gap-2">
             <span>ℹ️</span>
@@ -244,6 +254,7 @@ export default function CreateArticlePage() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main content */}
           <div className="lg:col-span-2 space-y-5">
             <div>
               <label className="text-[#64748B] text-xs uppercase tracking-wider block mb-2">শিরোনাম *</label>
@@ -270,7 +281,9 @@ export default function CreateArticlePage() {
             </div>
           </div>
 
+          {/* Sidebar */}
           <div className="space-y-5">
+            {/* Thumbnail */}
             <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-4">
               <label className="text-[#64748B] text-xs uppercase tracking-wider block mb-3">থাম্বনেইল</label>
               {thumbnailPreview ? (
@@ -292,6 +305,7 @@ export default function CreateArticlePage() {
               )}
             </div>
 
+            {/* Category */}
             <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-4">
               <label className="text-[#64748B] text-xs uppercase tracking-wider block mb-3">বিভাগ *</label>
               <select
@@ -306,6 +320,20 @@ export default function CreateArticlePage() {
               </select>
             </div>
 
+            {/* 🔹 CHANGE 2: Added Source / Reference Link Input Field 🔹 */}
+            <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-4">
+              <label className="text-[#64748B] text-xs uppercase block mb-3 font-bold tracking-wider">সোর্স / বিস্তারিত লিঙ্ক</label>
+              <input 
+                type="url" 
+                value={form.source} 
+                onChange={(e) => setForm({ ...form, source: e.target.value })} 
+                placeholder="https://example.com" 
+                className="w-full bg-[#1E1E2E] text-[#E2E8F0] border border-[#2E2E3E] rounded px-3 py-2 text-sm outline-none focus:border-[#E53E3E] transition-colors" 
+              />
+              <p className="text-[10px] text-[#64748B] mt-2 italic">এখানে লিঙ্ক দিলে আর্টিকেলের শেষে "Read More" বাটন আসবে।</p>
+            </div>
+
+            {/* Breaking / Featured — Admin/Editor only */}
             {!isReporter && (
               <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-4 space-y-3">
                 <label className="text-[#64748B] text-xs uppercase tracking-wider block">অপশন</label>

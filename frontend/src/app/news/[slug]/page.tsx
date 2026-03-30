@@ -42,7 +42,6 @@ function timeAgo(date: string) {
   return new Date(date).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
-// 🔹 SEO & SOCIAL MEDIA DISCORD EMBEDS 🔹
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const article = await getArticle(slug);
@@ -84,7 +83,6 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     return notFound();
   }
 
-  // 🔹 JSON-LD STRUCTURED DATA FOR GOOGLE INDEXING 🔹
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "NewsArticle",
@@ -117,7 +115,6 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
-            {/* ARTICLE CONTENT */}
             <article className="lg:col-span-2">
               <div className="flex items-center gap-3 mb-4">
                 {article.category && (
@@ -140,20 +137,38 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
                 </div>
               )}
 
-              {/* 🔹 Fixed Article Image Overflow via prose-img classes 🔹 */}
               <div 
-                className="prose max-w-none text-lg leading-relaxed article-content transition-colors prose-img:rounded-xl prose-img:w-full prose-img:shadow-md"
+                className="prose max-w-none text-lg leading-relaxed article-content transition-colors prose-img:rounded-xl prose-img:w-full prose-img:shadow-md mb-10"
                 dangerouslySetInnerHTML={{ __html: article.content || '' }}
               />
+
+              {/* 🔹 SOURCE / READ MORE SECTION 🔹 */}
+              {article.source && (
+                <div className="mt-12 p-6 rounded-xl border border-dashed transition-colors" style={{ borderColor: 'var(--border)', background: 'var(--bg3)' }}>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <span className="font-bold tracking-widest text-xs uppercase opacity-60" style={{ fontFamily: 'monospace' }}>
+                      Reference / সোর্স:
+                    </span>
+                    <a 
+                      href={article.source.startsWith('http') ? article.source : `https://${article.source}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="font-bold text-lg underline underline-offset-8 decoration-2 transition-all hover:opacity-80"
+                      style={{ color: 'var(--accent-red)' }}
+                    >
+                      Read More / বিস্তারিত পড়ুন ↗
+                    </a>
+                  </div>
+                </div>
+              )}
             </article>
 
-            {/* SIDEBAR */}
             <aside>
               <h3 className="text-xl font-bold mb-4 border-l-4 pl-3 transition-colors" style={{ borderColor: 'var(--accent-red)', color: 'var(--text)' }}>
                 সম্পর্কিত সংবাদ
               </h3>
               
-              <div className="space-y-4">
+              <div className="space-y-4 mb-10">
                 {related.length > 0 ? (
                   related.map((item: any) => (
                     <Link key={item.id} href={`/news/${item.slug}`} className="block group border-b pb-3 last:border-0" style={{ borderColor: 'var(--border)' }}>
@@ -170,9 +185,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
                 )}
               </div>
 
-              {/* 🔹 MULTIPLE FIXED SIDEBAR ADS APPEAR HERE 🔹 */}
               <FixedAd />
-              
             </aside>
           </div>
         </div>
