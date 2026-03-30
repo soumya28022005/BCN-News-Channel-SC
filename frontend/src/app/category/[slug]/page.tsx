@@ -53,3 +53,5 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     </>
   );
 }
+
+// this is category>[slung]>page.tsx

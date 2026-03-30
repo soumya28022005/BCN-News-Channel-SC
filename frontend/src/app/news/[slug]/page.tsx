@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { Metadata } from 'next';
 import Header from '../../../components/layout/Header';
 import Footer from '../../../components/layout/Footer';
-import FixedAd from '@/components/news/FixedAd';
+import FixedAd from '../../../components/ads/FixedAd';
+import BottomStickyAd from '../../../components/ads/BottomStickyAd';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.bcnnetwork.in'; 
@@ -194,3 +195,5 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     </>
   );
 }
+
+//this is [slug]>page.tsx

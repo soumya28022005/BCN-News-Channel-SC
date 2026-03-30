@@ -2,6 +2,7 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import SharedNewsLayout from '../components/news/SharedNewsLayout';
 import SponsorPopup from '../components/news/SponsorPopup'; 
+import LatestNews from '../components/news/LatestNews';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
@@ -36,3 +37,4 @@ export default async function HomePage() {
     </>
   );
 }
+// this is my src->app->page.tsx

@@ -54,3 +54,5 @@ export default function FixedAd() {
     </div>
   );
 }
+
+//src>components>news>FixedAd.tsx
