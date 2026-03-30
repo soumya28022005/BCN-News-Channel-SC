@@ -10,42 +10,41 @@ export default function SponsorPopup() {
   const showRef = useRef(show);
   useEffect(() => { showRef.current = show; }, [show]);
 
+  // Helper function to ensure external links open correctly
+  const ensureAbsoluteUrl = (url: string) => {
+    if (!url) return '#';
+    return url.startsWith('http') ? url : `https://${url}`;
+  };
+
   useEffect(() => {
     const checkAndShowAd = async () => {
-      if (showRef.current) return; // Don't fetch if an ad is currently open
+      if (showRef.current) return;
       
       const lastShown = localStorage.getItem('bcn_last_popup_time');
       const now = Date.now();
-      const tenMinutes = 10 * 60 * 1000; // 10 minutes in milliseconds
+      const tenMinutes = 10 * 60 * 1000; 
 
-      // Show if it's their FIRST visit OR if 10 minutes have passed
       if (!lastShown || now - parseInt(lastShown) >= tenMinutes) {
         try {
           const res = await api.get<any>('/sponsor');
           const activePopups = res.data?.filter((ad: any) => ad.position === 'POPUP' && ad.isActive);
           
           if (activePopups && activePopups.length > 0) {
-            // Pick a random popup if there are multiple
             const randomAd = activePopups[Math.floor(Math.random() * activePopups.length)];
             setSponsor(randomAd);
-            setTimeLeft(randomAd.duration || 5); // Use Admin's custom duration
+            setTimeLeft(randomAd.duration || 5); 
             setShow(true);
-            
-            // Record the exact time this user saw the ad
             localStorage.setItem('bcn_last_popup_time', now.toString());
           }
         } catch (err) {}
       }
     };
 
-    checkAndShowAd(); // Check instantly on page load
-    
-    // Check every 30 seconds to see if the 10-minute cooldown has expired
+    checkAndShowAd();
     const interval = setInterval(checkAndShowAd, 30000); 
     return () => clearInterval(interval);
   }, []);
 
-  // Countdown Timer Logic
   useEffect(() => {
     if (!show) return;
     if (timeLeft > 0) {
@@ -63,9 +62,18 @@ export default function SponsorPopup() {
       <div className="relative max-w-4xl w-full rounded-2xl overflow-hidden shadow-[0_24px_80px_rgba(0,0,0,0.9)] animate-in zoom-in-95 duration-500"
         style={{ border: '1px solid rgba(212,175,55,0.4)', background: '#0A0A0F' }}>
         
-        {/* Opens in new tab automatically with target="_blank" */}
-        <a href={sponsor.linkUrl || '#'} target="_blank" rel="noopener noreferrer" className="block cursor-pointer">
-          <img src={sponsor.imageUrl} alt={sponsor.title || "Sponsor"} className="w-full h-auto max-h-[80vh] object-contain bg-black" />
+        {/* 🔹 FIXED: Link logic added here 🔹 */}
+        <a 
+          href={ensureAbsoluteUrl(sponsor.linkUrl)} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="block cursor-pointer"
+        >
+          <img 
+            src={sponsor.imageUrl} 
+            alt={sponsor.title || "Sponsor"} 
+            className="w-full h-auto max-h-[80vh] object-contain bg-black" 
+          />
         </a>
 
         <div className="absolute top-4 right-4">

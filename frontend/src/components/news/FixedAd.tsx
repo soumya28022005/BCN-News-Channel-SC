@@ -5,8 +5,14 @@ import { api } from '@/lib/api';
 export default function FixedAd() {
   const [sponsors, setSponsors] = useState<any[]>([]);
 
+  // Helper function to ensure external links open correctly
+  const ensureAbsoluteUrl = (url: string) => {
+    if (!url) return '#';
+    return url.startsWith('http') ? url : `https://${url}`;
+  };
+
   useEffect(() => {
-    const fetchSponsor = async () => {
+    const fetchSponsors = async () => {
       try {
         const res = await api.get<any>('/sponsor');
         const sidebarAds = res.data?.filter((ad: any) => ad.position === 'SIDEBAR' && ad.isActive);
@@ -15,7 +21,7 @@ export default function FixedAd() {
         }
       } catch (err) {}
     };
-    fetchSponsor();
+    fetchSponsors();
   }, []);
 
   if (sponsors.length === 0) return null;
@@ -30,8 +36,18 @@ export default function FixedAd() {
             <span className="text-[9px] uppercase tracking-widest text-white/60 font-mono">Advertisement</span>
           </div>
 
-          <a href={sponsor.linkUrl || '#'} target="_blank" rel="noopener noreferrer" className="block relative group">
-            <img src={sponsor.imageUrl} alt={sponsor.title || "Ad"} className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500" />
+          {/* 🔹 FIXED: Link logic added here 🔹 */}
+          <a 
+            href={ensureAbsoluteUrl(sponsor.linkUrl)} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="block relative group"
+          >
+            <img 
+              src={sponsor.imageUrl} 
+              alt={sponsor.title || "Ad"} 
+              className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500" 
+            />
           </a>
         </div>
       ))}
