@@ -157,6 +157,7 @@ model Article {
   thumbnail        String?
   thumbnailAlt     String?
   thumbnailCaption String?
+  youtubeUrl       String?
 
   status      ArticleStatus @default(DRAFT)
   isBreaking  Boolean       @default(false)

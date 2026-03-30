@@ -22,7 +22,8 @@ export default function SponsorPopup() {
       
       const lastShown = localStorage.getItem('bcn_last_popup_time');
       const now = Date.now();
-      const tenMinutes = 10 * 60 * 1000; 
+      // time uo 10 min
+      const tenMinutes = 0.05 * 60 * 1000; 
 
       if (!lastShown || now - parseInt(lastShown) >= tenMinutes) {
         try {
@@ -56,8 +57,11 @@ export default function SponsorPopup() {
   if (!show || !sponsor) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-opacity animate-in fade-in duration-300"
-      style={{ background: 'rgba(10,26,58,0.9)', backdropFilter: 'blur(10px)' }}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-opacity animate-in fade-in zoom-in-95 duration-500"
+      style={{
+     background: 'rgba(10,26,58,0.75)',
+     backdropFilter: 'blur(14px)'
+        }}>
       
       <div className="relative max-w-4xl w-full rounded-2xl overflow-hidden shadow-[0_24px_80px_rgba(0,0,0,0.9)] animate-in zoom-in-95 duration-500"
         style={{ border: '1px solid rgba(212,175,55,0.4)', background: '#0A0A0F' }}>
@@ -72,20 +76,29 @@ export default function SponsorPopup() {
           <img 
             src={sponsor.imageUrl} 
             alt={sponsor.title || "Sponsor"} 
-            className="w-full h-auto max-h-[80vh] object-contain bg-black" 
+            className="w-full h-auto max-h-[80vh] object-contain bg-black transition-transform duration-500 hover:scale-[1.02]" 
           />
         </a>
 
-        <div className="absolute top-4 right-4">
+        <div className="absolute top-4 left-4 px-3 py-1 text-xs font-semibold rounded-full"
+        style={{
+            background: 'rgba(212,175,55,0.15)',
+            color: 'var(--gold)'
+                }}>
+                    Sponsored
+
           <button
             disabled={timeLeft > 0}
             onClick={() => setShow(false)}
             className="px-6 py-3 rounded-full text-sm font-bold backdrop-blur-md transition-all shadow-2xl"
-            style={{ 
-              background: timeLeft > 0 ? 'rgba(0,0,0,0.7)' : 'linear-gradient(135deg, #D4AF37, #B8960C)',
-              color: timeLeft > 0 ? '#94A3B8' : '#0A1A3A',
-              border: timeLeft > 0 ? '1px solid rgba(255,255,255,0.2)' : 'none',
-              cursor: timeLeft > 0 ? 'not-allowed' : 'pointer'
+            style={{
+             background: timeLeft > 0 
+                 ? 'rgba(15,33,71,0.8)' 
+                    : 'linear-gradient(135deg, #D4AF37, #FFC857)',
+                         color: timeLeft > 0 ? '#7A86B6' : '#0A1A3A',
+                        border: timeLeft > 0 
+                        ? '1px solid rgba(255,255,255,0.1)' 
+                              : 'none'
             }}
           >
             {timeLeft > 0 ? `অপেক্ষা করুন ${timeLeft}s...` : '✕ Close Ad'}

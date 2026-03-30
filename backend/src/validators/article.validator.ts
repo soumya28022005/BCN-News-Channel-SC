@@ -7,15 +7,15 @@ export const createArticleSchema = z.object({
     content: z.string().min(50, 'Content must be at least 50 characters'),
     categoryId: z.string().cuid('Invalid category ID'),
     tagIds: z.array(z.string().cuid()).optional(),
-    thumbnail: z.string().url().optional(),
+    thumbnail: z.string().url().optional().or(z.literal('')),
     thumbnailAlt: z.string().max(200).optional(),
+    youtubeUrl: z.string().url().optional().or(z.literal('')), // 🔹 NEW
     isBreaking: z.boolean().optional().default(false),
     isFeatured: z.boolean().optional().default(false),
     seoTitle: z.string().max(70).optional(),
     seoDescription: z.string().max(170).optional(),
     seoKeywords: z.array(z.string()).optional(),
-    // 🔹 ADD THIS LINE TO ALLOW SOURCE LINKS
-    source: z.string().optional(), 
+    source: z.string().optional().or(z.literal('')), 
   }),
 });
 

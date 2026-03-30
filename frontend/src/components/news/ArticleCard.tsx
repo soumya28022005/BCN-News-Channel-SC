@@ -9,7 +9,7 @@ interface ArticleCardProps {
 export default function ArticleCard({ article, variant = 'default' }: ArticleCardProps) {
   if (variant === 'horizontal') {
     return (
-      <Link href={`/news/${article.slug}`} className="group flex gap-3 article-card bg-[#111118] rounded-lg p-3">
+      <Link href={`/news/${article.slug}`} className="group flex gap-3 card-hover p-3 rounded-l">
         <div className="w-24 h-20 shrink-0 bg-[#1E1E2E] rounded overflow-hidden">
           {article.thumbnail ? (
             <img src={article.thumbnail} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -19,7 +19,8 @@ export default function ArticleCard({ article, variant = 'default' }: ArticleCar
         </div>
         <div className="flex-1 min-w-0">
           {article.category && (
-            <span className="text-[#E53E3E] text-xs font-medium uppercase">{article.category.name}</span>
+            <span className="text-xs font-medium uppercase"
+      style={{ color: 'var(--gold)' }}>{article.category.name}</span>
           )}
           <h3 className="text-sm font-semibold text-[#E2E8F0] line-clamp-2 mt-1 group-hover:text-[#E53E3E] transition-colors leading-snug">
             {article.title}
@@ -35,7 +36,8 @@ export default function ArticleCard({ article, variant = 'default' }: ArticleCar
       <Link href={`/news/${article.slug}`} className="group flex gap-3 items-start py-3 border-b border-[#1E1E2E] last:border-0">
         <div className="flex-1">
           {article.category && (
-            <span className="text-[#E53E3E] text-xs font-medium uppercase">{article.category.name}</span>
+            <span className="text-xs font-medium uppercase"
+      style={{ color: 'var(--gold)' }}>{article.category.name}</span>
           )}
           <h4 className="text-sm text-[#E2E8F0] group-hover:text-[#E53E3E] transition-colors leading-snug mt-0.5">
             {article.title}
@@ -61,7 +63,8 @@ export default function ArticleCard({ article, variant = 'default' }: ArticleCar
             <span className="bg-[#E53E3E] text-white text-xs px-2 py-0.5 rounded uppercase font-bold">ব্রেকিং</span>
           )}
           {article.category && (
-            <span className="text-[#E53E3E] text-xs font-medium uppercase">{article.category.name}</span>
+            <span className="text-xs font-medium uppercase"
+      style={{ color: 'var(--gold)' }}>{article.category.name}</span>
           )}
         </div>
         <h3 className="text-sm font-semibold text-[#E2E8F0] line-clamp-2 mb-2 group-hover:text-[#E53E3E] transition-colors leading-snug">

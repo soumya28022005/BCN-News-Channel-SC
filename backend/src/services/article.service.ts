@@ -157,22 +157,31 @@ export class ArticleService {
   // ─── CREATE ────────────────────────────────────────────────────────
   async create(data: any) {
     const slug = await this.generateUniqueSlug(data.title);
-    // Strip relation objects — prisma.create() only accepts scalar foreign keys
     const { tagIds, author, category, ...rest } = data;
 
-    return prisma.article.create({
-      data: {
-        ...rest,
-        slug,
-        ...(tagIds?.length > 0 && {
-          tags: { create: tagIds.map((tagId: string) => ({ tagId })) },
-        }),
-      },
-      include: {
-        author: { select: { id: true, name: true } },
-        category: true,
-        tags: { select: { tag: true } },
-      },
+    return prisma.$transaction(async (tx: any) => {
+      // 🔹 BREAKING NEWS LOGIC: Only one breaking news per category
+      if (rest.isBreaking && rest.categoryId) {
+        await tx.article.updateMany({
+          where: { categoryId: rest.categoryId, isBreaking: true },
+          data: { isBreaking: false }
+        });
+      }
+
+      return tx.article.create({
+        data: {
+          ...rest,
+          slug,
+          ...(tagIds?.length > 0 && {
+            tags: { create: tagIds.map((tagId: string) => ({ tagId })) },
+          }),
+        },
+        include: {
+          author: { select: { id: true, name: true } },
+          category: true,
+          tags: { select: { tag: true } },
+        },
+      });
     });
   }
 
@@ -181,6 +190,14 @@ export class ArticleService {
     const { tagIds, author, category, ...rest } = data;
 
     return prisma.$transaction(async (tx: any) => {
+      // 🔹 BREAKING NEWS LOGIC: Remove old breaking news in same category
+      if (rest.isBreaking && rest.categoryId) {
+        await tx.article.updateMany({
+          where: { categoryId: rest.categoryId, id: { not: id }, isBreaking: true },
+          data: { isBreaking: false }
+        });
+      }
+
       if (tagIds !== undefined) {
         await tx.article.update({ where: { id }, data: { tags: { deleteMany: {} } } });
         if (tagIds.length > 0) {
