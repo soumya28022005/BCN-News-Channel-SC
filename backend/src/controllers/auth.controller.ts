@@ -1,147 +1,52 @@
 import { Request, Response } from 'express';
-import { AuthService } from '../services/auth.service';
-import { EmailService } from '../services/email.service';
+import { env } from '../config/env';
 import { asyncHandler } from '../utils/asyncHandler';
-import { AppError } from '../utils/AppError';
-import { prisma } from '../config/database';
-import { config } from '../config/env';
+import { authService } from '../services/auth.service';
 
-const authService = new AuthService();
-const emailService = new EmailService();
+const cookieOptions = (maxAge: number) => ({
+  httpOnly: true,
+  sameSite: env.COOKIE_SAME_SITE,
+  secure: env.COOKIE_SECURE,
+  domain: env.COOKIE_DOMAIN || undefined,
+  path: '/',
+  maxAge,
+});
 
-function baseCookieOptions() {
-  return {
-    httpOnly: true,
-    secure: config.COOKIE_SECURE,
-    sameSite: config.COOKIE_SAME_SITE,
-    domain: config.COOKIE_DOMAIN,
-    path: '/',
-  } as const;
-}
+const setAuthCookies = (res: Response, accessToken: string, refreshToken: string) => {
+  res.cookie(env.ACCESS_COOKIE_NAME, accessToken, cookieOptions(env.COOKIE_ACCESS_MAX_AGE_MS));
+  res.cookie(env.REFRESH_COOKIE_NAME, refreshToken, cookieOptions(env.COOKIE_REFRESH_MAX_AGE_MS));
+};
 
-function setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
-  res.cookie(config.ACCESS_COOKIE_NAME, accessToken, {
-    ...baseCookieOptions(),
-    maxAge: config.ACCESS_COOKIE_MAX_AGE_MS,
-  });
-
-  res.cookie(config.REFRESH_COOKIE_NAME, refreshToken, {
-    ...baseCookieOptions(),
-    maxAge: config.REFRESH_COOKIE_MAX_AGE_MS,
-  });
-}
-
-function clearAuthCookies(res: Response) {
-  res.clearCookie(config.ACCESS_COOKIE_NAME, {
-    ...baseCookieOptions(),
-    maxAge: 0,
-  });
-
-  res.clearCookie(config.REFRESH_COOKIE_NAME, {
-    ...baseCookieOptions(),
-    maxAge: 0,
-  });
-}
+const clearAuthCookies = (res: Response) => {
+  res.clearCookie(env.ACCESS_COOKIE_NAME, { path: '/' });
+  res.clearCookie(env.REFRESH_COOKIE_NAME, { path: '/' });
+};
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
-  const { name, email, username, password } = req.body;
-
-  const result = await authService.register({ name, email, username, password });
-
-  setAuthCookies(res, result.accessToken, result.refreshToken);
-
-  emailService.sendWelcome(email, name).catch(() => {});
-
-  res.status(201).json({
-    success: true,
-    message: 'Registration successful',
-    data: {
-      user: result.user,
-    },
-  });
+  const result = await authService.register(req.body);
+  setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
+  res.status(201).json({ success: true, data: result.user });
 });
 
 export const login = asyncHandler(async (req: Request, res: Response) => {
-  const { email, password } = req.body;
-
-  const result = await authService.login(email, password);
-
-  setAuthCookies(res, result.accessToken, result.refreshToken);
-
-  res.json({
-    success: true,
-    message: 'Login successful',
-    data: {
-      user: result.user,
-    },
-  });
+  const result = await authService.login(req.body);
+  setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
+  res.status(200).json({ success: true, data: result.user });
 });
 
-export const refreshToken = asyncHandler(async (req: Request, res: Response) => {
-  const token =
-    req.cookies?.[config.REFRESH_COOKIE_NAME] || req.body?.refreshToken;
-
-  if (!token) throw new AppError('Refresh token required', 400);
-
-  const tokens = await authService.refreshToken(token);
-
-  setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
-
-  res.json({
-    success: true,
-    message: 'Session refreshed',
-  });
+export const refresh = asyncHandler(async (req: Request, res: Response) => {
+  const refreshToken = req.cookies?.[env.REFRESH_COOKIE_NAME];
+  const result = await authService.refresh(refreshToken);
+  setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
+  res.status(200).json({ success: true, data: result.user });
 });
 
 export const logout = asyncHandler(async (req: Request, res: Response) => {
-  if (req.user?.id) {
-    await authService.logout(req.user.id);
-  }
-
+  await authService.logout(req.user!.id);
   clearAuthCookies(res);
-
-  res.json({
-    success: true,
-    message: 'Logged out successfully',
-  });
+  res.status(200).json({ success: true, message: 'Logged out successfully' });
 });
 
 export const getMe = asyncHandler(async (req: Request, res: Response) => {
-  const user = await prisma.user.findUnique({
-    where: { id: req.user!.id },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      username: true,
-      role: true,
-      avatar: true,
-      bio: true,
-      isVerified: true,
-      createdAt: true,
-      authorProfile: true,
-    },
-  });
-
-  res.json({ success: true, data: user });
-});
-
-export const updateProfile = asyncHandler(async (req: Request, res: Response) => {
-  const { name, bio, avatar } = req.body;
-
-  const user = await prisma.user.update({
-    where: { id: req.user!.id },
-    data: { name, bio, avatar },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      username: true,
-      role: true,
-      avatar: true,
-      bio: true,
-    },
-  });
-
-  res.json({ success: true, data: user });
+  res.status(200).json({ success: true, data: req.user });
 });

@@ -1,69 +1,47 @@
-/**
- * BCN – Global Error Handler Middleware
- */
-
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
+import { ZodError } from 'zod';
 import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
 import { config } from '../config/env';
 
-export const errorHandler = (
-  err: any,
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  let statusCode = err.statusCode || 500;
-  let message = err.message || 'Internal Server Error';
+export function errorHandler(error: any, req: Request, res: Response, _next: NextFunction) {
+  let statusCode = error?.statusCode || 500;
+  let message = error?.message || 'Internal server error';
 
-  // Handle Prisma errors
-  if (err.code === 'P2025') {
+  if (error instanceof ZodError) {
+    statusCode = 422;
+    message = error.issues.map((issue) => issue.message).join(', ');
+  }
+
+  if (error?.code === 'P2002') {
+    statusCode = 409;
+    message = `Duplicate ${error.meta?.target?.join(', ') || 'record'}`;
+  }
+
+  if (error?.code === 'P2025') {
     statusCode = 404;
     message = 'Record not found';
-  } else if (err.code === 'P2002') {
-    statusCode = 409;
-    const field = err.meta?.target?.[0] || 'field';
-    message = `${field} already exists`;
-  } else if (err.code === 'P2003') {
-    statusCode = 400;
-    message = 'Invalid reference';
   }
 
-  // Handle JWT errors
-  if (err.name === 'JsonWebTokenError') {
+  if (error?.name === 'JsonWebTokenError' || error?.name === 'TokenExpiredError') {
     statusCode = 401;
-    message = 'Invalid token';
-  } else if (err.name === 'TokenExpiredError') {
-    statusCode = 401;
-    message = 'Token expired';
+    message = 'Invalid or expired token';
   }
 
-  // Log server errors
   if (statusCode >= 500) {
     logger.error({
-      message: err.message,
-      stack: err.stack,
-      url: req.originalUrl,
+      message: error?.message,
+      stack: error?.stack,
+      path: req.originalUrl,
       method: req.method,
-      body: req.body,
-      user: req.user?.id,
+      userId: req.user?.id,
     });
   }
 
-  const response: any = {
+  return res.status(statusCode).json({
     success: false,
-    statusCode,
     message,
-    ...(config.NODE_ENV === 'development' && { stack: err.stack }),
-  };
-
-  res.status(statusCode).json(response);
-};
-
-export const notFound = (req: Request, res: Response) => {
-  res.status(404).json({
-    success: false,
-    statusCode: 404,
-    message: `Route ${req.originalUrl} not found`,
+    statusCode,
+    ...(config.NODE_ENV !== 'production' && error?.stack ? { stack: error.stack } : {}),
   });
-};
+}

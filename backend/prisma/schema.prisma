@@ -1,6 +1,3 @@
-// BCN – The Bengal Chronicle Network
-// Prisma Schema - Production Database Design
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -9,10 +6,6 @@ datasource db {
 generator client {
   provider = "prisma-client-js"
 }
-
-// ─────────────────────────────────────────
-// ENUMS
-// ─────────────────────────────────────────
 
 enum Role {
   SUPER_ADMIN
@@ -36,10 +29,6 @@ enum MediaType {
   DOCUMENT
 }
 
-// ─────────────────────────────────────────
-// USERS
-// ─────────────────────────────────────────
-
 model User {
   id               String    @id @default(cuid())
   email            String    @unique
@@ -58,12 +47,9 @@ model User {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  articles         Article[] @relation("ArticleAuthor")
-  editedArticles   Article[] @relation("ArticleEditor")
-  
-  // 🔹 নতুন: রিভিশন হিস্ট্রির রিলেশন
-  articleRevisions ArticleRevision[] 
-  
+  articles         Article[]         @relation("ArticleAuthor")
+  editedArticles   Article[]         @relation("ArticleEditor")
+  articleRevisions ArticleRevision[]
   comments         Comment[]
   likes            Like[]
   bookmarks        Bookmark[]
@@ -73,12 +59,9 @@ model User {
 
   @@index([email])
   @@index([username])
+  @@index([role, isActive])
   @@map("users")
 }
-
-// ─────────────────────────────────────────
-// AUTHOR PROFILE
-// ─────────────────────────────────────────
 
 model AuthorProfile {
   id            String   @id @default(cuid())
@@ -96,10 +79,6 @@ model AuthorProfile {
 
   @@map("author_profiles")
 }
-
-// ─────────────────────────────────────────
-// CATEGORIES
-// ─────────────────────────────────────────
 
 model Category {
   id          String     @id @default(cuid())
@@ -121,12 +100,9 @@ model Category {
   seoMeta  SeoMetadata?
 
   @@index([slug])
+  @@index([isActive, sortOrder])
   @@map("categories")
 }
-
-// ─────────────────────────────────────────
-// TAGS
-// ─────────────────────────────────────────
 
 model Tag {
   id          String   @id @default(cuid())
@@ -144,62 +120,48 @@ model Tag {
   @@map("tags")
 }
 
-// ─────────────────────────────────────────
-// ARTICLES
-// ─────────────────────────────────────────
-
 model Article {
-  id               String  @id @default(cuid())
+  id               String        @id @default(cuid())
   title            String
-  slug             String  @unique
+  slug             String        @unique
   excerpt          String?
   content          String
   thumbnail        String?
   thumbnailAlt     String?
   thumbnailCaption String?
   youtubeUrl       String?
-
-  status      ArticleStatus @default(DRAFT)
-  isBreaking  Boolean       @default(false)
-  isFeatured  Boolean       @default(false)
-  isTrending  Boolean       @default(false)
-  publishedAt DateTime?
-  scheduledAt DateTime?
-
-  authorId     String
-  author       User     @relation("ArticleAuthor", fields: [authorId], references: [id])
-  lastEditorId String?
-  lastEditor   User?    @relation("ArticleEditor", fields: [lastEditorId], references: [id])
-
-  categoryId String
-  category   Category @relation(fields: [categoryId], references: [id])
-
-  viewCount    BigInt @default(0)
-  likeCount    Int    @default(0)
-  commentCount Int    @default(0)
-  shareCount   Int    @default(0)
-  readingTime  Int?
-
-  language String  @default("en")
-  location String?
-  source   String?
-
+  status           ArticleStatus @default(DRAFT)
+  isBreaking       Boolean       @default(false)
+  isFeatured       Boolean       @default(false)
+  isTrending       Boolean       @default(false)
+  publishedAt      DateTime?
+  scheduledAt      DateTime?
+  authorId         String
+  author           User          @relation("ArticleAuthor", fields: [authorId], references: [id])
+  lastEditorId     String?
+  lastEditor       User?         @relation("ArticleEditor", fields: [lastEditorId], references: [id])
+  categoryId       String
+  category         Category      @relation(fields: [categoryId], references: [id])
+  viewCount        BigInt        @default(0)
+  likeCount        Int           @default(0)
+  commentCount     Int           @default(0)
+  shareCount       Int           @default(0)
+  readingTime      Int?
+  language         String        @default("en")
+  location         String?
+  source           String?
   seoTitle         String?
   seoDescription   String?
   seoKeywords      String[]
   canonicalUrl     String?
-  noIndex          Boolean  @default(false)
+  noIndex          Boolean       @default(false)
   seoScore         Int?
   readabilityScore Int?
+  articleSchema    Json?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
-  articleSchema Json?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // 🔹 নতুন: রিভিশন হিস্ট্রির রিলেশন
   revisions       ArticleRevision[]
-
   tags            ArticleTag[]
   comments        Comment[]
   likes           Like[]
@@ -213,17 +175,14 @@ model Article {
 
   @@index([slug])
   @@index([status, publishedAt])
-  @@index([categoryId])
-  @@index([authorId])
-  @@index([isBreaking])
-  @@index([isFeatured])
-  @@index([isTrending])
+  @@index([status, createdAt])
+  @@index([status, isFeatured, publishedAt])
+  @@index([status, isTrending, publishedAt])
+  @@index([status, isBreaking, publishedAt])
+  @@index([categoryId, status, publishedAt])
+  @@index([authorId, status, createdAt])
   @@map("articles")
 }
-
-// ─────────────────────────────────────────
-// ARTICLE-TAG JUNCTION
-// ─────────────────────────────────────────
 
 model ArticleTag {
   articleId String
@@ -235,10 +194,6 @@ model ArticleTag {
   @@map("article_tags")
 }
 
-// ─────────────────────────────────────────
-// RELATED ARTICLES
-// ─────────────────────────────────────────
-
 model ArticleRelation {
   fromId String
   toId   String
@@ -249,10 +204,6 @@ model ArticleRelation {
   @@id([fromId, toId])
   @@map("article_relations")
 }
-
-// ─────────────────────────────────────────
-// COMMENTS
-// ─────────────────────────────────────────
 
 model Comment {
   id         String    @id @default(cuid())
@@ -274,10 +225,6 @@ model Comment {
   @@map("comments")
 }
 
-// ─────────────────────────────────────────
-// LIKES
-// ─────────────────────────────────────────
-
 model Like {
   id        String   @id @default(cuid())
   userId    String
@@ -290,10 +237,6 @@ model Like {
   @@map("likes")
 }
 
-// ─────────────────────────────────────────
-// BOOKMARKS
-// ─────────────────────────────────────────
-
 model Bookmark {
   id        String   @id @default(cuid())
   userId    String
@@ -305,10 +248,6 @@ model Bookmark {
   @@unique([userId, articleId])
   @@map("bookmarks")
 }
-
-// ─────────────────────────────────────────
-// ARTICLE VIEWS
-// ─────────────────────────────────────────
 
 model ArticleView {
   id        String   @id @default(cuid())
@@ -323,14 +262,10 @@ model ArticleView {
   duration  Int?
   createdAt DateTime @default(now())
 
-  @@index([articleId])
+  @@index([articleId, createdAt])
   @@index([createdAt])
   @@map("article_views")
 }
-
-// ─────────────────────────────────────────
-// ARTICLE ANALYTICS
-// ─────────────────────────────────────────
 
 model ArticleAnalytics {
   id             String   @id @default(cuid())
@@ -346,10 +281,6 @@ model ArticleAnalytics {
 
   @@map("article_analytics")
 }
-
-// ─────────────────────────────────────────
-// MEDIA
-// ─────────────────────────────────────────
 
 model Media {
   id           String    @id @default(cuid())
@@ -382,46 +313,33 @@ model ArticleMedia {
   @@map("article_media")
 }
 
-// ─────────────────────────────────────────
-// SEO METADATA
-// ─────────────────────────────────────────
-
 model SeoMetadata {
-  id         String    @id @default(cuid())
-  articleId  String?   @unique
-  article    Article?  @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  categoryId String?   @unique
-  category   Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-
-  title        String?
-  description  String?
-  keywords     String[]
-  canonicalUrl String?
-
-  ogTitle       String?
-  ogDescription String?
-  ogImage       String?
-  ogType        String  @default("article")
-
+  id                 String    @id @default(cuid())
+  articleId          String?   @unique
+  article            Article?  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  categoryId         String?   @unique
+  category           Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  title              String?
+  description        String?
+  keywords           String[]
+  canonicalUrl       String?
+  ogTitle            String?
+  ogDescription      String?
+  ogImage            String?
+  ogType             String    @default("article")
   twitterTitle       String?
   twitterDescription String?
   twitterImage       String?
-  twitterCard        String  @default("summary_large_image")
-
-  jsonLd           Json?
-  seoScore         Int?
-  readabilityScore Int?
-  keywordDensity   Json?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  twitterCard        String    @default("summary_large_image")
+  jsonLd             Json?
+  seoScore           Int?
+  readabilityScore   Int?
+  keywordDensity     Json?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   @@map("seo_metadata")
 }
-
-// ─────────────────────────────────────────
-// NEWSLETTER
-// ─────────────────────────────────────────
 
 model Newsletter {
   id         String   @id @default(cuid())
@@ -435,10 +353,6 @@ model Newsletter {
   @@index([email])
   @@map("newsletter")
 }
-
-// ─────────────────────────────────────────
-// SESSIONS
-// ─────────────────────────────────────────
 
 model Session {
   id        String   @id @default(cuid())
@@ -455,10 +369,6 @@ model Session {
   @@map("sessions")
 }
 
-// ─────────────────────────────────────────
-// SITE SETTINGS
-// ─────────────────────────────────────────
-
 model SiteSettings {
   id          String   @id @default(cuid())
   key         String   @unique
@@ -468,10 +378,6 @@ model SiteSettings {
 
   @@map("site_settings")
 }
-
-// ─────────────────────────────────────────
-// BREAKING NEWS TICKER
-// ─────────────────────────────────────────
 
 model BreakingNewsTicker {
   id        String    @id @default(cuid())
@@ -485,24 +391,16 @@ model BreakingNewsTicker {
   @@map("breaking_news_tickers")
 }
 
-// ─────────────────────────────────────────
-// ARTICLE REVISIONS (কে কী চেঞ্জ করেছে তার রেকর্ড)
-// ─────────────────────────────────────────
-
 model ArticleRevision {
   id         String   @id @default(cuid())
   articleId  String
   article    Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  
   editorId   String
   editor     User     @relation(fields: [editorId], references: [id])
-  
   oldTitle   String?
   newTitle   String?
-  
   oldContent String?  @db.Text
   newContent String?  @db.Text
-  
   createdAt  DateTime @default(now())
 
   @@index([articleId])
@@ -515,8 +413,10 @@ model Sponsor {
   linkUrl   String?
   imageUrl  String
   isActive  Boolean  @default(false)
-  position  String   @default("POPUP") 
-  duration  Int      @default(5) 
+  position  String   @default("POPUP")
+  duration  Int      @default(5)
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  @@index([position, isActive])
+  @@map("sponsors")
 }

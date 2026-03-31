@@ -33,7 +33,7 @@ export function getRedisClient(): Redis {
   return redisClient;
 }
 
-export async function connectRedis() {
+export async function closeRedis() {
   const client = getRedisClient();
   await client.ping();
 }

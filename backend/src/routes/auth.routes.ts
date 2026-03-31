@@ -1,22 +1,16 @@
 import { Router } from 'express';
-import {
-  register,
-  login,
-  refreshToken,
-  logout,
-  getMe,
-  updateProfile,
-} from '../controllers/auth.controller';
+import { getMe, login, logout, refresh, register } from '../controllers/auth.controller';
 import { authenticate } from '../middlewares/auth.middleware';
-import { strictRateLimiter } from '../middlewares/rateLimiter';
+import { loginRateLimiter } from '../middlewares/rateLimiter';
+import { validateRequest } from '../middlewares/validateRequest';
+import { loginSchema, registerSchema } from '../validators/auth.validator';
 
 const router = Router();
 
-router.post('/register', strictRateLimiter, register);
-router.post('/login', strictRateLimiter, login);
-router.post('/refresh', refreshToken);
+router.post('/register', loginRateLimiter, validateRequest(registerSchema), register);
+router.post('/login', loginRateLimiter, validateRequest(loginSchema), login);
+router.post('/refresh', refresh);
 router.post('/logout', authenticate, logout);
 router.get('/me', authenticate, getMe);
-router.patch('/profile', authenticate, updateProfile);
 
 export default router;

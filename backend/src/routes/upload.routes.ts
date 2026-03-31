@@ -6,14 +6,13 @@ import { strictRateLimiter } from '../middlewares/rateLimiter';
 
 const router = Router();
 
-// Configure Multer for memory storage (Best practice if uploading to Cloudinary/S3 in the controller)
+// Configure Multer for memory storage
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { 
-    fileSize: 10 * 1024 * 1024 // 10 MB limit to prevent server overload
+    fileSize: 10 * 1024 * 1024 // 10 MB limit
   },
   fileFilter: (req, file, cb) => {
-    // Only allow image and video mime types
     if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
       cb(null, true);
     } else {
@@ -24,25 +23,25 @@ const upload = multer({
 
 // ────────────── ROUTES ──────────────
 
-// 1. Upload Route (Protected, Role-Restricted, Rate-Limited, and Parsed by Multer)
+// 1. Upload Route
 router.post(
-  '/upload',
-  protect, // Must be logged in
-  restrictTo('SUPER_ADMIN', 'ADMIN', 'EDITOR', 'JOURNALIST'), // Only staff can upload
-  strictRateLimiter, // ✅ Import works now: Max 20 uploads per hour
-  upload.single('file'), // 'file' matches the FormData field from the frontend
+  '/', // Changed from '/upload' to '/' since the base path in server.ts will be /api/v1/upload
+  protect, 
+  restrictTo('SUPER_ADMIN', 'ADMIN', 'EDITOR', 'JOURNALIST'), 
+  strictRateLimiter, 
+  upload.single('file'), 
   uploadMedia
 );
 
-// 2. Fetch all media library files (For Admin Dashboard)
+// 2. Fetch all media
 router.get(
   '/', 
   protect, 
-  restrictTo('SUPER_ADMIN', 'ADMIN', 'EDITOR'), 
+  restrictTo('SUPER_ADMIN', 'ADMIN', 'EDITOR', 'JOURNALIST'), 
   getMedia
 );
 
-// 3. Delete a media file
+// 3. Delete media
 router.delete(
   '/:id', 
   protect, 
@@ -50,4 +49,5 @@ router.delete(
   deleteMedia
 );
 
+// ✅ THIS IS THE CRITICAL LINE THAT ALLOWS YOU TO IMPORT IT IN SERVER.TS
 export default router;

@@ -1,41 +1,33 @@
-import { prisma } from '../config/database';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { config } from '../config/env';
+import { prisma } from '../config/database';
+import { env } from '../config/env';
 import { AppError } from '../utils/AppError';
 
-interface TokenPayload {
-  id: string;
-  role: string;
-  email: string;
-}
+class AuthService {
+  private signAccessToken(payload: { sub: string; role: string }) {
+    return jwt.sign(payload, env.JWT_ACCESS_SECRET, { expiresIn: env.ACCESS_TOKEN_TTL });
+  }
 
-export class AuthService {
-  async register(data: {
-    name: string;
-    email: string;
-    username: string;
-    password: string;
-  }) {
+  private signRefreshToken(payload: { sub: string; role: string }) {
+    return jwt.sign(payload, env.JWT_REFRESH_SECRET, { expiresIn: env.REFRESH_TOKEN_TTL });
+  }
+
+  async register(input: { name: string; username: string; email: string; password: string }) {
     const existing = await prisma.user.findFirst({
-      where: {
-        OR: [{ email: data.email }, { username: data.username }],
-      },
+      where: { OR: [{ email: input.email }, { username: input.username }] },
+      select: { id: true },
     });
 
-    if (existing?.email === data.email) {
-      throw new AppError('Email already registered', 409);
-    }
-    if (existing?.username === data.username) {
-      throw new AppError('Username already taken', 409);
-    }
+    if (existing) throw new AppError('Email or username already exists', 409);
 
-    const hashedPassword = await bcrypt.hash(data.password, 12);
-
+    const password = await bcrypt.hash(input.password, 12);
     const user = await prisma.user.create({
       data: {
-        ...data,
-        password: hashedPassword,
+        name: input.name,
+        username: input.username,
+        email: input.email,
+        password,
       },
       select: {
         id: true,
@@ -43,119 +35,67 @@ export class AuthService {
         email: true,
         username: true,
         role: true,
-        avatar: true,
-        createdAt: true,
       },
     });
 
-    const tokens = this.generateTokens({ id: user.id, role: user.role, email: user.email });
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { refreshToken: await bcrypt.hash(tokens.refreshToken, 8) },
-    });
-
-    return { user, ...tokens };
-  }
-  async login(email: string, password: string) {
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        username: true,
-        password: true,
-        role: true,
-        avatar: true,
-        isActive: true,
-        isVerified: true,
+    return {
+      user,
+      tokens: {
+        accessToken: this.signAccessToken({ sub: user.id, role: user.role }),
+        refreshToken: this.signRefreshToken({ sub: user.id, role: user.role }),
       },
-    });
-    console.log("your email ad password is ", email, password);
-    if (!user) throw new AppError('Invalid credentials', 401);
-    if (!user.isActive) throw new AppError('Account has been suspended', 403);
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) throw new AppError('Invalid credentials', 401);
-
-    const tokens = this.generateTokens({ id: user.id, role: user.role, email: user.email });
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        refreshToken: await bcrypt.hash(tokens.refreshToken, 8),
-        lastLogin: new Date(),
-      },
-    });
-
-    const { password: _password, ...userWithoutPassword } = user;
-    return { user: userWithoutPassword, ...tokens };
+    };
   }
 
-  async refreshToken(token: string) {
-    try {
-      const decoded = jwt.verify(token, config.JWT_REFRESH_SECRET) as TokenPayload;
+  async login(input: { email: string; password: string }) {
+    const user = await prisma.user.findUnique({ where: { email: input.email } });
+    if (!user) throw new AppError('Invalid email or password', 401);
 
-      const user = await prisma.user.findUnique({
-        where: { id: decoded.id },
-        select: {
-          id: true,
-          role: true,
-          email: true,
-          refreshToken: true,
-          isActive: true,
-        },
-      });
+    const isPasswordValid = await bcrypt.compare(input.password, user.password);
+    if (!isPasswordValid) throw new AppError('Invalid email or password', 401);
 
-      if (!user || !user.isActive || !user.refreshToken) {
-        throw new AppError('Invalid refresh token', 401);
-      }
-
-      const isValid = await bcrypt.compare(token, user.refreshToken);
-      if (!isValid) throw new AppError('Invalid refresh token', 401);
-
-      const tokens = this.generateTokens({
+    return {
+      user: {
         id: user.id,
-        role: user.role,
+        name: user.name,
         email: user.email,
-      });
-
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { refreshToken: await bcrypt.hash(tokens.refreshToken, 8) },
-      });
-
-      return tokens;
-    } catch {
-      throw new AppError('Invalid or expired refresh token', 401);
-    }
+        username: user.username,
+        role: user.role,
+      },
+      tokens: {
+        accessToken: this.signAccessToken({ sub: user.id, role: user.role }),
+        refreshToken: this.signRefreshToken({ sub: user.id, role: user.role }),
+      },
+    };
   }
 
-  async logout(userId: string) {
-    await prisma.user.update({
-      where: { id: userId },
-      data: { refreshToken: null },
+  async refresh(refreshToken?: string) {
+    if (!refreshToken) throw new AppError('Refresh token missing', 401);
+
+    const payload = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET) as { sub: string; role: string };
+    const user = await prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: { id: true, name: true, email: true, username: true, role: true },
     });
+
+    if (!user) throw new AppError('User not found', 404);
+
+    return {
+      user,
+      tokens: {
+        accessToken: this.signAccessToken({ sub: user.id, role: user.role }),
+        refreshToken: this.signRefreshToken({ sub: user.id, role: user.role }),
+      },
+    };
   }
 
-  generateTokens(payload: TokenPayload) {
-    const accessToken = jwt.sign(payload, config.JWT_SECRET, {
-      expiresIn: config.JWT_EXPIRES_IN,
-    } as jwt.SignOptions);
-
-    const refreshToken = jwt.sign(payload, config.JWT_REFRESH_SECRET, {
-      expiresIn: config.JWT_REFRESH_EXPIRES_IN,
-    } as jwt.SignOptions);
-
-    return { accessToken, refreshToken };
+  async logout(_userId: string) {
+    return true;
   }
 
-  verifyAccessToken(token: string): TokenPayload {
-    try {
-      return jwt.verify(token, config.JWT_SECRET) as TokenPayload;
-    } catch {
-      throw new AppError('Invalid or expired token', 401);
-    }
+  verifyAccessToken(token: string) {
+    return jwt.verify(token, env.JWT_ACCESS_SECRET) as { sub: string; role: string };
   }
 }
+
+export const authService = new AuthService();
