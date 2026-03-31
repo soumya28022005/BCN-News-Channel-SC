@@ -1,0 +1,2 @@
+import dynamic from 'next/dynamic';
+export const LazySponsorAd = dynamic(async () => ({ default: () => <aside className="rounded-3xl border border-dashed border-white/15 bg-white/5 p-6 text-sm text-slate-300">Sponsor / ad slot</aside> }), { ssr: false });

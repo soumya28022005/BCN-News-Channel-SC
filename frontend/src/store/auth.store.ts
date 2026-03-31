@@ -1,133 +1,46 @@
+'use client';
 import { create } from 'zustand';
-import { User } from '../types';
-
-interface AuthState {
-  user: User | null;
-  accessToken: string | null;
+import { apiClient } from '../lib/api/client';
+export type AuthUser = { id: string; name: string; email: string; username: string; role: 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'JOURNALIST' | 'USER' };
+type AuthState = {
+  user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  error: string | null;
+  hydrate: () => Promise<void>;
+  login: (payload: { email: string; password: string }) => Promise<void>;
   logout: () => Promise<void>;
-  loadFromStorage: () => Promise<void>;
-}
-
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-
+};
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  accessToken: null,
   isAuthenticated: false,
   isLoading: false,
-
-  login: async (email, password) => {
-    set({ isLoading: true });
-
+  error: null,
+  hydrate: async () => {
     try {
-      const res = await fetch(`${API}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        set({
-          user: null,
-          accessToken: null,
-          isAuthenticated: false,
-          isLoading: false,
-        });
-
-        return {
-          success: false,
-          error: data.message || 'Login failed',
-        };
-      }
-
-      set({
-        user: data.data.user,
-        accessToken: null,
-        isAuthenticated: true,
-        isLoading: false,
-      });
-
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
-      }
-
-      return { success: true };
+      set({ isLoading: true, error: null });
+      const response = await apiClient.get<{ success: true; data: AuthUser }>('/auth/me');
+      set({ user: response.data, isAuthenticated: true, isLoading: false });
     } catch {
-      set({
-        user: null,
-        accessToken: null,
-        isAuthenticated: false,
-        isLoading: false,
-      });
-
-      return { success: false, error: 'Network error' };
+      set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },
-
+  login: async (payload) => {
+    try {
+      set({ isLoading: true, error: null });
+      const response = await apiClient.post<{ success: true; data: AuthUser }>('/auth/login', payload);
+      set({ user: response.data, isAuthenticated: true, isLoading: false, error: null });
+    } catch (error) {
+      set({ isLoading: false, error: error instanceof Error ? error.message : 'Login failed' });
+      throw error;
+    }
+  },
   logout: async () => {
     try {
-      await fetch(`${API}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-    } catch {
-      // ignore network logout failure
+      set({ isLoading: true, error: null });
+      await apiClient.post('/auth/logout');
+    } finally {
+      set({ user: null, isAuthenticated: false, isLoading: false });
     }
-
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('user');
-      window.location.href = '/auth/login';
-    }
-
-    set({
-      user: null,
-      accessToken: null,
-      isAuthenticated: false,
-      isLoading: false,
-    });
-  },
-
-  loadFromStorage: async () => {
-    set({ isLoading: true });
-
-    try {
-      const res = await fetch(`${API}/auth/me`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.success && data.data) {
-        set({
-          user: data.data,
-          accessToken: null,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-        return;
-      }
-    } catch {
-      // ignore
-    }
-
-    set({
-      user: null,
-      accessToken: null,
-      isAuthenticated: false,
-      isLoading: false,
-    });
   },
 }));
-

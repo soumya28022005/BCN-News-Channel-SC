@@ -505,3 +505,5 @@ cd /Users/soumyachatterjee/Desktop/bcn-platform/backend && npx ts-node-dev --tra
 *Built with ❤️ for BCN – The Bengal Chronicle Network*
 *"Truth. Speed. Bengal."*# BCN-News-Channel-SC
 # BCN-News-Channel-SC
+
+soumya jskdfj

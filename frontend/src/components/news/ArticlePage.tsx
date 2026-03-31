@@ -1,0 +1,6 @@
+import { formatDate } from '../../lib/utils';
+import { ArticleJsonLd } from '../seo/ArticleJsonLd';
+import { RelatedArticles } from './RelatedArticles';
+export function ArticlePage({ article, related }: { article: any; related: any[] }) {
+  return <main className="bg-slate-950 text-white"><ArticleJsonLd title={article.title} description={article.excerpt ?? article.seoMetadata?.description ?? ''} slug={article.slug} publishedAt={article.publishedAt} image={article.thumbnail} author={article.author?.name} /><article className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8"><p className="text-xs uppercase tracking-[0.25em] text-amber-300">{article.category?.name ?? 'News'}</p><h1 className="mt-3 text-4xl font-bold leading-tight md:text-5xl">{article.title}</h1><div className="mt-5 flex flex-wrap gap-4 text-sm text-slate-400"><span>By {article.author?.name ?? 'BCN News Desk'}</span>{article.publishedAt ? <span>{formatDate(article.publishedAt)}</span> : null}{article.readingTime ? <span>{article.readingTime} min read</span> : null}</div>{article.excerpt ? <p className="mt-6 text-xl leading-8 text-slate-300">{article.excerpt}</p> : null}<div className="prose prose-invert mt-10 max-w-none prose-headings:text-white prose-p:text-slate-200" dangerouslySetInnerHTML={{ __html: article.content }} /><RelatedArticles items={related} /></article></main>;
+}
