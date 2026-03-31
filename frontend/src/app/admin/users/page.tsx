@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '../../../store/authStore';
+import { useAuthStore } from '../../../store/auth.store';
 import { api } from '../../../lib/api';
 
 export default function AdminUsersPage() {

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { useAuthStore } from '../../store/authStore';
+import { useAuthStore } from '../../store/auth.store';
 import { api } from '../../lib/api';
 import { timeAgo } from '../../lib/utils';
 import { 
@@ -71,43 +71,41 @@ export default function AdminDashboard() {
 
   // 🔹 2. RACE CONDITION FIX: Check localStorage directly to prevent false logouts
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      router.push('/auth/login'); 
-      return;
-    }
-    
-    // Only fetch data once Zustand has successfully loaded the user
-    if (isAuthenticated && user) {
-      fetchDashboardData(); 
-    }
-  }, [isAuthenticated, router, user]);
+  if (loading) return;
+
+  if (!isAuthenticated || !user) {
+    router.push('/auth/login');
+    return;
+  }
+
+  fetchDashboardData();
+}, [isAuthenticated, user, loading, router]);
+
 
   // 🔹 3. 5-MINUTE AUTO LOGOUT (Works seamlessly in the background)
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    if (!token || !isAuthenticated) return;
+  if (!isAuthenticated) return;
 
-    let timeoutId: NodeJS.Timeout;
+  let timeoutId: NodeJS.Timeout;
 
-    const resetTimer = () => {
-      clearTimeout(timeoutId);
-      // 300,000 ms = 5 minutes of total inactivity
-      timeoutId = setTimeout(() => {
-        logout();
-      }, 300000);
-    };
+  const resetTimer = () => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      logout();
+    }, 30 * 60 * 1000); // 30 minutes
+  };
 
-    const events = ['mousemove', 'keydown', 'mousedown', 'scroll', 'touchstart'];
-    events.forEach(event => window.addEventListener(event, resetTimer));
-    
-    resetTimer();
+  const events = ['mousemove', 'keydown', 'mousedown', 'scroll', 'touchstart'];
+  events.forEach((event) => window.addEventListener(event, resetTimer));
 
-    return () => {
-      clearTimeout(timeoutId);
-      events.forEach(event => window.removeEventListener(event, resetTimer));
-    };
-  }, [isAuthenticated, logout]);
+  resetTimer();
+
+  return () => {
+    clearTimeout(timeoutId);
+    events.forEach((event) => window.removeEventListener(event, resetTimer));
+  };
+}, [isAuthenticated, logout]);
+
 
   const handlePublish = async (id: string) => {
     try {
@@ -129,7 +127,16 @@ export default function AdminDashboard() {
   };
 
   // Prevent UI flashing before auth loads
-  if (!isAuthenticated && !loading && !user) return null;
+  if (loading) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#0A1A3A] text-white">
+      Loading admin panel...
+    </div>
+  );
+}
+
+if (!isAuthenticated || !user) return null;
+
 
   const sidebarLinks = [
     { label: 'ড্যাশবোর্ড', href: '/newsroom-bcn-2024', icon: <LayoutDashboard size={18} /> },

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import logo from './logo/log.png';
+import logo from '@/components/layout/logo/log.png';
 
 export default function Footer() {
   const year = new Date().getFullYear();

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuthStore } from '../../../../../store/authStore';
+import { useAuthStore } from '../../../../../store/auth.store';
 import { api } from '../../../../../lib/api';
 import ArticleEditor from '../../../../../components/admin/ArticleEditor';
 

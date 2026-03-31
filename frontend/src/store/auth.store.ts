@@ -8,8 +8,8 @@ interface AuthState {
   isLoading: boolean;
 
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
-  loadFromStorage: () => void;
+  logout: () => Promise<void>;
+  loadFromStorage: () => Promise<void>;
 }
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -22,55 +22,112 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   login: async (email, password) => {
     set({ isLoading: true });
+
     try {
       const res = await fetch(`${API}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
+
       const data = await res.json();
 
-      if (data.success && data.data?.accessToken) {
-        localStorage.setItem('accessToken', data.data.accessToken);
-        localStorage.setItem('refreshToken', data.data.refreshToken);
-        localStorage.setItem('user', JSON.stringify(data.data.user));
+      if (!res.ok || !data.success) {
         set({
-          user: data.data.user,
-          accessToken: data.data.accessToken,
-          isAuthenticated: true,
+          user: null,
+          accessToken: null,
+          isAuthenticated: false,
           isLoading: false,
         });
-        return { success: true };
-      } else {
-        set({ isLoading: false });
-        return { success: false, error: data.message || 'Login failed' };
+
+        return {
+          success: false,
+          error: data.message || 'Login failed',
+        };
       }
+
+      set({
+        user: data.data.user,
+        accessToken: null,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+      }
+
+      return { success: true };
     } catch {
-      set({ isLoading: false });
+      set({
+        user: null,
+        accessToken: null,
+        isAuthenticated: false,
+        isLoading: false,
+      });
+
       return { success: false, error: 'Network error' };
     }
   },
 
-  logout: () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
-    set({ user: null, accessToken: null, isAuthenticated: false });
-    window.location.href = '/api/v1/auth/s/o/n/a/m/o/u/l/i/u/m/y/a';
+  logout: async () => {
+    try {
+      await fetch(`${API}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch {
+      // ignore network logout failure
+    }
+
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      window.location.href = '/auth/login';
+    }
+
+    set({
+      user: null,
+      accessToken: null,
+      isAuthenticated: false,
+      isLoading: false,
+    });
   },
 
-  loadFromStorage: () => {
-    if (typeof window === 'undefined') return;
-    const token = localStorage.getItem('accessToken');
-    const userStr = localStorage.getItem('user');
-    if (token && userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        set({ user, accessToken: token, isAuthenticated: true });
-      } catch {
-        localStorage.removeItem('user');
-        localStorage.removeItem('accessToken');
+  loadFromStorage: async () => {
+    set({ isLoading: true });
+
+    try {
+      const res = await fetch(`${API}/auth/me`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success && data.data) {
+        set({
+          user: data.data,
+          accessToken: null,
+          isAuthenticated: true,
+          isLoading: false,
+        });
+        return;
       }
+    } catch {
+      // ignore
     }
+
+    set({
+      user: null,
+      accessToken: null,
+      isAuthenticated: false,
+      isLoading: false,
+    });
   },
 }));
+

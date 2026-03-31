@@ -2,8 +2,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-// Update path to your authStore if necessary
-import { useAuthStore } from '../../../../store/authStore';
+// Update path to your auth.store if necessary
+import { useAuthStore } from '../../../../store/auth.store';
 import { api } from '../../../../lib/api';
 import ArticleEditor from '../../../../components/admin/ArticleEditor';
 

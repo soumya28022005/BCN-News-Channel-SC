@@ -1,16 +1,11 @@
-/**
- * BCN – Auth Middleware
- * JWT verification and role-based access control
- */
-
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/auth.service';
 import { AppError } from '../utils/AppError';
 import { prisma } from '../config/database';
+import { config } from '../config/env';
 
 const authService = new AuthService();
 
-// Extend Express Request type
 declare global {
   namespace Express {
     interface Request {
@@ -24,15 +19,26 @@ declare global {
   }
 }
 
-// ─── AUTHENTICATE ─────────────────────────────────────────────────
+function extractToken(req: Request): string | null {
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith('Bearer ')) {
+    return authHeader.split(' ')[1];
+  }
+
+  const cookieToken = req.cookies?.[config.ACCESS_COOKIE_NAME];
+  if (cookieToken) return cookieToken;
+
+  return null;
+}
+
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
+    const token = extractToken(req);
+
+    if (!token) {
       throw new AppError('No token provided', 401);
     }
 
-    const token = authHeader.split(' ')[1];
     const decoded = authService.verifyAccessToken(token);
 
     const user = await prisma.user.findUnique({
@@ -57,13 +63,10 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-// ─── OPTIONAL AUTH ─────────────────────────────────────────────────
-// Attaches user if token exists, but doesn't require it
 export const optionalAuth = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (authHeader?.startsWith('Bearer ')) {
-      const token = authHeader.split(' ')[1];
+    const token = extractToken(req);
+    if (token) {
       const decoded = authService.verifyAccessToken(token);
       const user = await prisma.user.findUnique({
         where: { id: decoded.id },
@@ -72,12 +75,11 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
       if (user) req.user = user;
     }
   } catch {
-    // Silently ignore auth errors for optional auth
+    // ignore optional auth errors
   }
   next();
 };
 
-// ─── AUTHORIZE ROLES ───────────────────────────────────────────────
 export const authorize = (...roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
@@ -90,7 +92,6 @@ export const authorize = (...roles: string[]) => {
   };
 };
 
-// ─── ROLE SHORTCUTS ────────────────────────────────────────────────
 export const isAdmin = authorize('ADMIN', 'SUPER_ADMIN');
 export const isJournalist = authorize('JOURNALIST', 'EDITOR', 'ADMIN', 'SUPER_ADMIN');
 export const isEditor = authorize('EDITOR', 'ADMIN', 'SUPER_ADMIN');
@@ -98,11 +99,10 @@ export const isSuperAdmin = authorize('SUPER_ADMIN');
 
 export const restrictTo = (...roles: string[]) => {
   return (req: any, res: any, next: any) => {
-    // req.user asche authenticate middleware theke
-    if (!roles.includes(req.user.role)) {
+    if (!req.user || !roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
-        message: 'আপনার এই কাজ করার অনুমতি নেই'
+        message: 'আপনার এই কাজ করার অনুমতি নেই',
       });
     }
     next();

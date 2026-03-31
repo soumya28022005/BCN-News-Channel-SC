@@ -10,8 +10,11 @@ import { CacheService } from '../services/cache.service';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
 import { ArticleStatus } from '@prisma/client';
+import { sanitizeArticleInput } from '../utils/sanitize';
+
 
 const articleService = new ArticleService();
+
 const seoService = new SeoService();
 const cacheService = new CacheService();
 
@@ -156,19 +159,21 @@ export const createArticle = asyncHandler(async (req: Request, res: Response) =>
     }
   }
 
-  const seoData = await seoService.generateSeoMetadata({
-    title: req.body.title,
-    content: req.body.content,
-    excerpt: req.body.excerpt,
-    category: req.body.categoryId,
-  });
+  const sanitizedBody = sanitizeArticleInput(req.body);
 
-  const readingTime = articleService.calculateReadingTime(req.body.content);
+ const seoData = await seoService.generateSeoMetadata({
+  title: req.body.title,
+  content: req.body.content,
+  excerpt: req.body.excerpt,
+  category: req.body.categoryId,
+});
 
-  const article = await articleService.create({
-    ...req.body,
-    status: finalStatus,           // server-enforced status
-    authorId: authorId_create,     // always from JWT, never from body
+const readingTime = articleService.calculateReadingTime(req.body.content);
+
+ const article = await articleService.create({
+  ...req.body,
+  status: finalStatus,
+  authorId: authorId_create,   
     readingTime,
     seoTitle: req.body.seoTitle || seoData.title,
     seoDescription: req.body.seoDescription || seoData.description,
