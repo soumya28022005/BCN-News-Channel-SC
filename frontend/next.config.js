@@ -2,12 +2,16 @@
 const nextConfig = {
   images: {
     remotePatterns: [
-      { protocol: 'https', hostname: 'res.cloudinary.com' },
+      {
+        protocol: 'https',
+        hostname: '**', // ✅ allows ALL external image hostnames
+      },
+      {
+        protocol: 'http',
+        hostname: '**',
+      },
     ],
   },
-  experimental: {
-    staleTimes: { dynamic: 0 },
-  },
-  allowedDevOrigins: ['*'],
 };
+
 module.exports = nextConfig;

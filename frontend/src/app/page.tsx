@@ -2,7 +2,10 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import SharedNewsLayout from '../components/news/SharedNewsLayout';
 import SponsorPopup from '../components/news/SponsorPopup'; 
-import LatestNews from '../components/news/LatestNews';
+
+// Import the new Ad Components
+import TopBannerAd from '../components/ads/TopBannerAd';
+import BottomStickyAd from '../components/ads/BottomStickyAd';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
@@ -32,9 +35,16 @@ export default async function HomePage() {
     <>
       <SponsorPopup /> 
       <Header />
+      
+      {/* 🟢 Top Banner Ad - Responsive & Above Main Content */}
+      <TopBannerAd />
+
       <SharedNewsLayout articles={articles} breaking={breaking} trending={trending} />
+      
+      {/* 🟢 Mobile Only Bottom Sticky Ad */}
+      <BottomStickyAd />
+
       <Footer />
     </>
   );
 }
-// this is my src->app->page.tsx

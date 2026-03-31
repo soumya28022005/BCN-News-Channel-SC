@@ -1,11 +1,15 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { AD_CONFIG } from '../../config/ads.config';
 
 export default function BottomStickyAd() {
   const [ad, setAd] = useState<any>(null);
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
+    // If AdSense is enabled, we don't need to fetch custom ads
+    if (AD_CONFIG.ADSENSE_ENABLED) return;
+
     const fetchAd = async () => {
       try {
         const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -35,17 +39,38 @@ export default function BottomStickyAd() {
     fetchAd();
   }, []);
 
-  if (!ad || !visible) return null;
+  if (!visible) return null;
+  if (!AD_CONFIG.ADSENSE_ENABLED && !ad) return null;
 
   return (
     <>
-      <div className="h-[80px]" />
-      <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center p-2" style={{ background: 'var(--bg2)', borderTop: '1px solid var(--border)' }}>
-        <div className="relative w-full max-w-[720px] rounded-lg overflow-hidden" style={{ border: '1px solid var(--border)' }}>
-          <button onClick={() => setVisible(false)} className="absolute top-1 right-1 text-xs px-2 py-1 bg-black/60 text-white rounded">✕</button>
-          <a href={ad.linkUrl !== '#' ? ad.linkUrl : undefined} target="_blank" rel="noreferrer">
-            <img src={ad.imageUrl} alt="Advertisement" className="w-full h-[80px] object-cover" />
-          </a>
+      {/* Spacer to prevent content from hiding behind the sticky ad */}
+      <div className="h-[80px] lg:hidden" />
+      
+      {/* Fixed Container - Only visible on Mobile/Tablet */}
+      <div className="fixed bottom-0 left-0 right-0 z-[100] flex justify-center p-2 lg:hidden shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] transition-all duration-300" style={{ background: 'var(--bg2)', borderTop: '1px solid var(--border)' }}>
+        <div className="relative w-full max-w-[720px] rounded-lg overflow-hidden bg-white dark:bg-black">
+          
+          {/* Close Button */}
+          <button 
+            onClick={() => setVisible(false)} 
+            className="absolute top-1 right-1 z-10 text-[10px] px-2 py-1 bg-black/70 hover:bg-black text-white rounded shadow"
+            aria-label="Close Ad"
+          >
+            ✕ Close
+          </button>
+
+          {/* Ad Content */}
+          {AD_CONFIG.ADSENSE_ENABLED ? (
+            <ins className="adsbygoogle"
+                 style={{ display: 'inline-block', width: '100%', height: '80px' }}
+                 data-ad-client={AD_CONFIG.ADSENSE_CLIENT_ID}
+                 data-ad-slot="YOUR_BOTTOM_AD_SLOT_ID"></ins>
+          ) : (
+            <a href={ad.linkUrl !== '#' ? ad.linkUrl : undefined} target="_blank" rel="noreferrer" className="block w-full">
+              <img src={ad.imageUrl} alt="Advertisement" className="w-full h-[80px] object-contain" />
+            </a>
+          )}
         </div>
       </div>
     </>
