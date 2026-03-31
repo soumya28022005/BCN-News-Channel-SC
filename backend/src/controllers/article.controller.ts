@@ -36,6 +36,9 @@ export const getArticles = asyncHandler(async (req: Request, res: Response) => {
     trending,
   } = req.query;
 
+  const pageNum = Number(page) || 1;
+  const limitNum = Number(limit) || 20;
+
   let queryStatus = status as ArticleStatus | undefined;
 
   // ── লজিক ১: অনুমোদিত role ছাড়া যেকোনো visitor শুধু PUBLISHED দেখবে ──
@@ -82,8 +85,8 @@ export const getArticles = asyncHandler(async (req: Request, res: Response) => {
   }
 
   const result = await articleService.findAll({
-    page: Number(page),
-    limit: Number(limit),
+   page: pageNum,
+   limit: limitNum,
     category: category as string,
     tag: tag as string,
     author: queryAuthorUsername,
@@ -396,3 +399,5 @@ export const getArticleById = asyncHandler(async (req: Request, res: Response) =
   if (!article) throw new AppError('Article not found', 404);
   return res.json({ success: true, article });
 });
+
+// this is backend/src/controllers/article.controller.ts 

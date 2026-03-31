@@ -96,6 +96,7 @@ export class ArticleService {
       ...(search && {
         OR: [
           { title: { contains: search, mode: 'insensitive' } },
+{ content: { contains: search, mode: 'insensitive' } },
           { excerpt: { contains: search, mode: 'insensitive' } },
           { seoKeywords: { has: search.toLowerCase() } },
         ],
@@ -340,3 +341,5 @@ export class ArticleService {
     return slug;
   }
 }
+
+//this is backend/src/services/article.service.ts

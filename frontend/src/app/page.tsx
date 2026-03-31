@@ -1,5 +1,4 @@
-import Header from '../components/layout/Header';
-import Footer from '../components/layout/Footer';
+
 import SharedNewsLayout from '../components/news/SharedNewsLayout';
 import SponsorPopup from '../components/news/SponsorPopup'; 
 
@@ -34,7 +33,7 @@ export default async function HomePage() {
   return (
     <>
       <SponsorPopup /> 
-      <Header />
+      
       
       {/* 🟢 Top Banner Ad - Responsive & Above Main Content */}
       <TopBannerAd />
@@ -44,7 +43,7 @@ export default async function HomePage() {
       {/* 🟢 Mobile Only Bottom Sticky Ad */}
       <BottomStickyAd />
 
-      <Footer />
+  
     </>
   );
 }

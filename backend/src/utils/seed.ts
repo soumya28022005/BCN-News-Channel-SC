@@ -8,95 +8,67 @@ async function main() {
 
   // ─── CATEGORIES ────────────────────────────────────────────────
   const categories = await Promise.all([
-    prisma.category.upsert({
-      where: { slug: 'bengal' },
-      update: {},
-      create: {
-        name: 'Bengal',
-        slug: 'bengal',
-        description: 'News from West Bengal',
-        color: '#C8102E',
-        sortOrder: 1,
-      },
-    }),
-    prisma.category.upsert({
-      where: { slug: 'india' },
-      update: {},
-      create: {
-        name: 'India',
-        slug: 'india',
-        description: 'National news',
-        color: '#FF9933',
-        sortOrder: 2,
-      },
-    }),
-    prisma.category.upsert({
-      where: { slug: 'world' },
-      update: {},
-      create: {
-        name: 'World',
-        slug: 'world',
-        description: 'International news',
-        color: '#0077CC',
-        sortOrder: 3,
-      },
-    }),
-    prisma.category.upsert({
-      where: { slug: 'politics' },
-      update: {},
-      create: {
-        name: 'Politics',
-        slug: 'politics',
-        description: 'Political news and analysis',
-        color: '#7B2D8B',
-        sortOrder: 4,
-      },
-    }),
-    prisma.category.upsert({
-      where: { slug: 'business' },
-      update: {},
-      create: {
-        name: 'Business',
-        slug: 'business',
-        description: 'Business & Economy',
-        color: '#2E7D32',
-        sortOrder: 5,
-      },
-    }),
-    prisma.category.upsert({
-      where: { slug: 'sports' },
-      update: {},
-      create: {
-        name: 'Sports',
-        slug: 'sports',
-        description: 'Sports news',
-        color: '#E65100',
-        sortOrder: 6,
-      },
-    }),
-    prisma.category.upsert({
-      where: { slug: 'technology' },
-      update: {},
-      create: {
-        name: 'Technology',
-        slug: 'technology',
-        description: 'Tech news & reviews',
-        color: '#1565C0',
-        sortOrder: 7,
-      },
-    }),
-    prisma.category.upsert({
-      where: { slug: 'entertainment' },
-      update: {},
-      create: {
-        name: 'Entertainment',
-        slug: 'entertainment',
-        description: 'Bollywood, Tollywood & more',
-        color: '#AD1457',
-        sortOrder: 8,
-      },
-    }),
-  ]);
+  prisma.category.upsert({
+    where: { slug: 'bengal' },
+    update: {},
+    create: {
+      name: 'বাংলা',
+      slug: 'bengal',
+      color: '#C8102E',
+      sortOrder: 1,
+    },
+  }),
+  prisma.category.upsert({
+    where: { slug: 'politics' },
+    update: {},
+    create: {
+      name: 'রাজনীতি',
+      slug: 'politics',
+      color: '#7B2D8B',
+      sortOrder: 2,
+    },
+  }),
+  prisma.category.upsert({
+    where: { slug: 'sports' },
+    update: {},
+    create: {
+      name: 'খেলা',
+      slug: 'sports',
+      color: '#E65100',
+      sortOrder: 3,
+    },
+  }),
+  prisma.category.upsert({
+    where: { slug: 'technology' },
+    update: {},
+    create: {
+      name: 'প্রযুক্তি',
+      slug: 'technology',
+      color: '#1565C0',
+      sortOrder: 4,
+    },
+  }),
+  prisma.category.upsert({
+    where: { slug: 'entertainment' },
+    update: {},
+    create: {
+      name: 'বিনোদন',
+      slug: 'entertainment',
+      color: '#AD1457',
+      sortOrder: 5,
+    },
+  }),
+  prisma.category.upsert({
+    where: { slug: 'world' },
+    update: {},
+    create: {
+      name: 'বিশ্ব',
+      slug: 'world',
+      color: '#0077CC',
+      sortOrder: 6,
+    },
+  }),
+]);
 
   console.log(`✅ Created ${categories.length} categories`);
 
@@ -305,3 +277,5 @@ main()
     process.exit(1);
   })
   .finally(() => prisma.$disconnect());
+
+  //this is backend>src>utils>seed.ts

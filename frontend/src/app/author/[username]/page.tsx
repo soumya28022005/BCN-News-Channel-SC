@@ -1,6 +1,4 @@
 import Link from 'next/link';
-import Header from '../../../components/layout/Header';
-import Footer from '../../../components/layout/Footer';
 
 const API = 'http://localhost:8000/api/v1';
 
@@ -37,7 +35,7 @@ export default async function AuthorPage({ params }: { params: { username: strin
 
   return (
     <>
-      <Header />
+     
       <main className="min-h-screen bg-[#0A0A0F]">
         {/* Author Profile */}
         <div className="bg-[#111118] border-b border-[#1E1E2E] py-10 px-4">
@@ -108,7 +106,6 @@ export default async function AuthorPage({ params }: { params: { username: strin
           )}
         </div>
       </main>
-      <Footer />
     </>
   );
 }

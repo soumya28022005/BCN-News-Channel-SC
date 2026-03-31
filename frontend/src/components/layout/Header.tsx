@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import logo from '@/components/layout/logo/log.png';
+import { categories } from '@/lib/categories';
 
 // আপনার বলা ৭টা ফিক্সড ক্যাটাগরি
 const mainCategories = [

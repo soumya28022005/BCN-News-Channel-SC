@@ -35,15 +35,25 @@ export class CacheService {
   }
 
   async invalidatePattern(pattern: string): Promise<void> {
-    try {
-      const keys = await this.client.keys(pattern);
-      if (keys.length > 0) {
-        await this.client.del(...keys);
-      }
-    } catch (error) {
-      logger.warn(`Cache INVALIDATE error for pattern ${pattern}:`, error);
+  try {
+    const stream = this.client.scanStream({
+      match: pattern,
+      count: 100,
+    });
+
+    const keys: string[] = [];
+
+    for await (const resultKeys of stream) {
+      keys.push(...resultKeys);
     }
+
+    if (keys.length > 0) {
+      await this.client.del(...keys);
+    }
+  } catch (error) {
+    logger.warn(`Cache INVALIDATE error for pattern ${pattern}:`, error);
   }
+}
 
   async exists(key: string): Promise<boolean> {
     try {
@@ -54,3 +64,5 @@ export class CacheService {
     }
   }
 }
+
+// this src>services>cache.service.ts

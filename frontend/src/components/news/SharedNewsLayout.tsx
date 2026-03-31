@@ -1,19 +1,35 @@
 import Link from 'next/link';
 import Image from 'next/image';
 
+type Article = {
+  id: string;
+  title: string;
+  slug: string;
+  thumbnail?: string;
+  publishedAt?: string;
+  createdAt?: string;
+  isBreaking?: boolean;
+  author?: { name?: string };
+  category?: { name?: string };
+};
+
 // ✅ Checks if a URL is an actual image file (not an article page URL)
-function isValidImageUrl(url: string): boolean {
+function isValidImageUrl(url?: string): boolean {
   if (!url) return false;
   return /\.(jpg|jpeg|png|gif|webp|avif|svg)(\?.*)?$/i.test(url);
 }
 
-function timeAgo(date: string) {
-  if (!date) return '';
+function timeAgo(date?: string) {
+  if (!date) return ''; 
+
   const diff = Date.now() - new Date(date).getTime();
   const mins = Math.floor(diff / 60000);
+
   if (mins < 60) return `${mins} মিনিট আগে`;
+
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs} ঘণ্টা আগে`;
+
   return `${Math.floor(hrs / 24)} দিন আগে`;
 }
 
@@ -34,7 +50,7 @@ export default function SharedNewsLayout({
   trending = [],
   pageTitle,
 }: {
-  articles: any[];
+  articles: Article[];
   breaking?: any[];
   trending?: any[];
   pageTitle?: string;
@@ -143,7 +159,7 @@ export default function SharedNewsLayout({
                         {/* ✅ FIXED: isValidImageUrl guards hero image */}
                         {isValidImageUrl(featured.thumbnail) ? (
                           <Image
-                            src={featured.thumbnail}
+                            src={featured.thumbnail || '/fallback.jpg'}
                             alt={featured.title}
                             fill
                             sizes="(max-width: 1024px) 100vw, 66vw"

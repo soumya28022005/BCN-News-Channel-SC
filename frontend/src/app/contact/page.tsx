@@ -1,8 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import Header from '../../components/layout/Header';
-import Footer from '../../components/layout/Footer';
+
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
@@ -16,7 +15,7 @@ export default function ContactPage() {
 
   return (
     <>
-      <Header />
+      
       <main className="min-h-screen bg-[#0A0A0F]">
         {/* Hero */}
         <div className="bg-[#111118] border-b border-[#1E1E2E] py-16 px-4">
@@ -121,7 +120,7 @@ export default function ContactPage() {
           </div>
         </div>
       </main>
-      <Footer />
+     
     </>
   );
 }

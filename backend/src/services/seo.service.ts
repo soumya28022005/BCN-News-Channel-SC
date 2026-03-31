@@ -105,10 +105,11 @@ export class SeoService {
       'should', 'may', 'might', 'shall', 'can', 'this', 'that', 'these',
       'those', 'it', 'its', 'said', 'also', 'as', 'he', 'she', 'they',
       'we', 'you', 'i', 'his', 'her', 'their', 'our', 'your', 'my',
+      'bangla', 'বাংলা', 'এই', 'এবং', 'করে', 'করা', 'হয়', 'হচ্ছে', 'ছিল', 'থেকে', 'জন্য', 'একটি', 'তার', 'তাদের',
     ]);
 
     const text = `${title} ${title} ${content}`.toLowerCase();
-    const words = text.match(/\b[a-z]{3,}\b/g) || [];
+   const words = text.match(/[\u0980-\u09FFa-zA-Z]{2,}/g) || [];
 
     // Count word frequency
     const freq: Record<string, number> = {};
@@ -127,7 +128,7 @@ export class SeoService {
 
   // ─── CALCULATE KEYWORD DENSITY ─────────────────────────────────────
   private calculateKeywordDensity(content: string, keywords: string[]): Record<string, number> {
-    const words = content.toLowerCase().match(/\b[a-z]+\b/g) || [];
+    const words = content.toLowerCase().match(/[\u0980-\u09FFa-zA-Z]+/g) || [];
     const totalWords = words.length;
     const density: Record<string, number> = {};
 
@@ -195,7 +196,7 @@ export class SeoService {
 
   // ─── READABILITY SCORE (Flesch-Kincaid inspired) ───────────────────
   private calculateReadabilityScore(content: string): number {
-    const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    const sentences = content.split(/[.!?।]+/).filter(s => s.trim().length > 0);
     const words = content.split(/\s+/).filter(w => w.length > 0);
     const syllables = words.reduce((acc, word) => acc + this.countSyllables(word), 0);
 
@@ -305,7 +306,7 @@ export class SeoService {
       } : undefined,
       'articleSection': article.category,
       'keywords': keywords?.join(', '),
-      'inLanguage': 'en',
+      'inLanguage': 'bn',
       'isAccessibleForFree': true,
     };
   }
@@ -321,7 +322,7 @@ export class SeoService {
       'og:image': article.thumbnailUrl || `${config.SITE_URL}/og-default.jpg`,
       'og:image:width': '1200',
       'og:image:height': '630',
-      'og:locale': 'en_IN',
+      'og:locale': 'bn_IN',
       ...(article.publishedAt && {
         'article:published_time': article.publishedAt.toISOString(),
         'article:author': article.author,
@@ -390,7 +391,7 @@ export class SeoService {
     <news:news>
       <news:publication>
         <news:name>BCN – The Bengal Chronicle Network</news:name>
-        <news:language>en</news:language>
+        <news:language>bn</news:language>
       </news:publication>
       <news:publication_date>${article.publishedAt?.toISOString() || now}</news:publication_date>
       <news:title>${this.escapeXml(article.title)}</news:title>
