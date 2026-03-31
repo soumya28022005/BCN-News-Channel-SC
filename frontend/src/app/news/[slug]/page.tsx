@@ -2,8 +2,6 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Metadata } from 'next';
-import Header from '../../../components/layout/Header';
-import Footer from '../../../components/layout/Footer';
 import FixedAd from '../../../components/ads/FixedAd';
 import { apiUrl, SITE_URL } from '../../../lib/config'; // ✅ FIX 1: centralized config
 
@@ -132,7 +130,6 @@ export default async function ArticlePage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <Header />
 
       <main
         className="min-h-screen transition-colors duration-300"
@@ -259,7 +256,6 @@ export default async function ArticlePage({
           </div>
         </div>
       </main>
-      <Footer />
     </>
   );
 }

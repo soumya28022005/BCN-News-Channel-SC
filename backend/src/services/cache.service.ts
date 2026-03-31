@@ -20,7 +20,13 @@ export class CacheService {
 
   async set(key: string, value: any, ttl: number = 300): Promise<void> {
     try {
-      await this.client.setex(key, ttl, JSON.stringify(value, (_, v) => typeof v === "bigint" ? v.toString() : v));
+      await this.client.setex(
+        key,
+        ttl,
+        JSON.stringify(value, (_, v) =>
+          typeof v === 'bigint' ? v.toString() : v
+        )
+      );
     } catch (error) {
       logger.warn(`Cache SET error for key ${key}:`, error);
     }
@@ -34,26 +40,34 @@ export class CacheService {
     }
   }
 
+  /**
+   * 🔥 NON-BLOCKING CACHE INVALIDATION (Production Safe)
+   */
   async invalidatePattern(pattern: string): Promise<void> {
-  try {
-    const stream = this.client.scanStream({
-      match: pattern,
-      count: 100,
-    });
+    try {
+      let cursor = '0';
 
-    const keys: string[] = [];
+      do {
+        const [nextCursor, keys] = await this.client.scan(
+          cursor,
+          'MATCH',
+          pattern,
+          'COUNT',
+          100
+        );
 
-    for await (const resultKeys of stream) {
-      keys.push(...resultKeys);
+        cursor = nextCursor;
+
+        if (keys.length > 0) {
+          await this.client.del(...keys);
+        }
+
+      } while (cursor !== '0');
+
+    } catch (error) {
+      logger.warn(`Cache INVALIDATE error for pattern ${pattern}:`, error);
     }
-
-    if (keys.length > 0) {
-      await this.client.del(...keys);
-    }
-  } catch (error) {
-    logger.warn(`Cache INVALIDATE error for pattern ${pattern}:`, error);
   }
-}
 
   async exists(key: string): Promise<boolean> {
     try {

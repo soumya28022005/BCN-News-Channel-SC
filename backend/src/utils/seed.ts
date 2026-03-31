@@ -7,45 +7,38 @@ async function main() {
   console.log('🌱 Seeding BCN Database...');
 
   // ─── CATEGORIES ────────────────────────────────────────────────
-  const categories = await Promise.all([
-  prisma.category.upsert({
-    where: { slug: 'bengal' },
-    update: {},
-    create: {
-      name: 'বাংলা',
-      slug: 'bengal',
-      color: '#C8102E',
-      sortOrder: 1,
-    },
-  }),
+const categories = await Promise.all([
   prisma.category.upsert({
     where: { slug: 'politics' },
     update: {},
     create: {
       name: 'রাজনীতি',
       slug: 'politics',
+      description: 'রাজনৈতিক সংবাদ ও বিশ্লেষণ',
       color: '#7B2D8B',
+      sortOrder: 1,
+    },
+  }),
+  prisma.category.upsert({
+    where: { slug: 'westbengal' },
+    update: {},
+    create: {
+      name: 'পশ্চিমবঙ্গ',
+      slug: 'westbengal',
+      description: 'পশ্চিমবঙ্গের সংবাদ',
+      color: '#C8102E',
       sortOrder: 2,
     },
   }),
   prisma.category.upsert({
-    where: { slug: 'sports' },
+    where: { slug: 'education' },
     update: {},
     create: {
-      name: 'খেলা',
-      slug: 'sports',
-      color: '#E65100',
-      sortOrder: 3,
-    },
-  }),
-  prisma.category.upsert({
-    where: { slug: 'technology' },
-    update: {},
-    create: {
-      name: 'প্রযুক্তি',
-      slug: 'technology',
+      name: 'শিক্ষা',
+      slug: 'education',
+      description: 'শিক্ষা সংক্রান্ত সংবাদ',
       color: '#1565C0',
-      sortOrder: 4,
+      sortOrder: 3,
     },
   }),
   prisma.category.upsert({
@@ -54,21 +47,90 @@ async function main() {
     create: {
       name: 'বিনোদন',
       slug: 'entertainment',
+      description: 'বিনোদন জগতের সংবাদ',
       color: '#AD1457',
+      sortOrder: 4,
+    },
+  }),
+  prisma.category.upsert({
+    where: { slug: 'govt-schemes' },
+    update: {},
+    create: {
+      name: 'সরকারি প্রকল্প',
+      slug: 'govt-schemes',
+      description: 'সরকারি প্রকল্প ও জনকল্যাণ',
+      color: '#2E7D32',
       sortOrder: 5,
     },
   }),
   prisma.category.upsert({
-    where: { slug: 'world' },
+    where: { slug: 'jobs' },
     update: {},
     create: {
-      name: 'বিশ্ব',
-      slug: 'world',
-      color: '#0077CC',
+      name: 'চাকরি',
+      slug: 'jobs',
+      description: 'চাকরি ও কর্মসংস্থান',
+      color: '#E65100',
       sortOrder: 6,
     },
   }),
+  prisma.category.upsert({
+    where: { slug: 'sports' },
+    update: {},
+    create: {
+      name: 'খেলাধুলা',
+      slug: 'sports',
+      description: 'খেলাধুলার সংবাদ',
+      color: '#EF6C00',
+      sortOrder: 7,
+    },
+  }),
+  prisma.category.upsert({
+    where: { slug: 'bengal' },
+    update: {},
+    create: {
+      name: 'বাংলা',
+      slug: 'bengal',
+      description: 'বাংলা সংক্রান্ত সংবাদ',
+      color: '#8E2430',
+      sortOrder: 8,
+    },
+  }),
+  prisma.category.upsert({
+    where: { slug: 'business' },
+    update: {},
+    create: {
+      name: 'ব্যবসা',
+      slug: 'business',
+      description: 'ব্যবসা ও অর্থনীতি',
+      color: '#00695C',
+      sortOrder: 9,
+    },
+  }),
+  prisma.category.upsert({
+    where: { slug: 'technology' },
+    update: {},
+    create: {
+      name: 'প্রযুক্তি',
+      slug: 'technology',
+      description: 'প্রযুক্তি সংবাদ',
+      color: '#283593',
+      sortOrder: 10,
+    },
+  }),
+  prisma.category.upsert({
+    where: { slug: 'international' },
+    update: {},
+    create: {
+      name: 'আন্তর্জাতিক',
+      slug: 'international',
+      description: 'আন্তর্জাতিক সংবাদ',
+      color: '#0277BD',
+      sortOrder: 11,
+    },
+  }),
 ]);
+
 
   console.log(`✅ Created ${categories.length} categories`);
 
@@ -178,7 +240,7 @@ async function main() {
       publishedAt: new Date(),
       readingTime: 4,
       seoTitle: 'BCN Launches Bengal Chronicle Network Digital Platform | BCN',
-      seoDescription: 'BCN – The Bengal Chronicle Network launches its digital news platform, delivering real-time news and in-depth analysis from Bengal, India, and the world.',
+      seoDescription: 'BCN - The Bengal Chronicle Network launches its digital news platform, delivering real-time news and in-depth analysis from Bengal, India, and the world.',
       seoKeywords: ['BCN', 'Bengal Chronicle Network', 'Bengal news', 'digital journalism'],
       viewCount: BigInt(1250),
       likeCount: 89,

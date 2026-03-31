@@ -1,49 +1,39 @@
-
 import SharedNewsLayout from '../components/news/SharedNewsLayout';
-import SponsorPopup from '../components/news/SponsorPopup'; 
-
-// Import the new Ad Components
+import SponsorPopup from '../components/news/SponsorPopup';
 import TopBannerAd from '../components/ads/TopBannerAd';
 import BottomStickyAd from '../components/ads/BottomStickyAd';
+import { serverGet } from '../lib/api/server';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+export const revalidate = 60;
 
 async function getArticles() {
-  try {
-    const res = await fetch(`${API}/articles?status=PUBLISHED&limit=20`, { next: { revalidate: 60 } });
-    return (await res.json()).data || [];
-  } catch { return []; }
+  const data = await serverGet<{ data?: any[] }>('/articles?status=PUBLISHED&limit=20', 60);
+  return data?.data || [];
 }
+
 async function getBreaking() {
-  try {
-    const res = await fetch(`${API}/articles/breaking`, { next: { revalidate: 30 } });
-    return (await res.json()).data || [];
-  } catch { return []; }
+  const data = await serverGet<{ data?: any[] }>('/articles/breaking', 30);
+  return data?.data || [];
 }
+
 async function getTrending() {
-  try {
-    const res = await fetch(`${API}/articles/trending`, { next: { revalidate: 120 } });
-    return (await res.json()).data || [];
-  } catch { return []; }
+  const data = await serverGet<{ data?: any[] }>('/articles/trending', 120);
+  return data?.data || [];
 }
 
 export default async function HomePage() {
-  const [articles, breaking, trending] = await Promise.all([getArticles(), getBreaking(), getTrending()]);
+  const [articles, breaking, trending] = await Promise.all([
+    getArticles(),
+    getBreaking(),
+    getTrending(),
+  ]);
 
   return (
     <>
-      <SponsorPopup /> 
-      
-      
-      {/* 🟢 Top Banner Ad - Responsive & Above Main Content */}
+      <SponsorPopup />
       <TopBannerAd />
-
       <SharedNewsLayout articles={articles} breaking={breaking} trending={trending} />
-      
-      {/* 🟢 Mobile Only Bottom Sticky Ad */}
       <BottomStickyAd />
-
-  
     </>
   );
 }

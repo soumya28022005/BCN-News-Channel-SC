@@ -1,22 +1,21 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  images: {
-    formats: ['image/avif', 'image/webp'], // 🔥 modern formats
+const imageHosts = (process.env.NEXT_PUBLIC_IMAGE_HOSTS || 'res.cloudinary.com')
+  .split(',')
+  .map((host) => host.trim())
+  .filter(Boolean);
 
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'cdn.yoursite.com', // 🔁 change if needed
-      },
-    ],
+const nextConfig = {
+  compress: true,
+  poweredByHeader: false,
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60,
+    remotePatterns: imageHosts.map((hostname) => ({
+      protocol: 'https',
+      hostname,
+    })),
+  },
+  experimental: {
+    optimizePackageImports: ['lucide-react'],
   },
 };
 
