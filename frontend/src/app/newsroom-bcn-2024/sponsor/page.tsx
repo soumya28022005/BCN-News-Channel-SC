@@ -6,7 +6,8 @@ import { useAuthStore } from '../../../store/auth.store';
 import { api } from '../../../lib/api';
 
 export default function SponsorManagerPage() {
-  const { user, isAuthenticated, loadFromStorage } = useAuthStore();
+  // ✅ FIX 1: Extract `isLoading` to prevent premature redirects
+  const { user, isAuthenticated, isLoading: authLoading, loadFromStorage } = useAuthStore();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
@@ -14,24 +15,35 @@ export default function SponsorManagerPage() {
   const [allAds, setAllAds] = useState<any[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // 🔹 Added `duration` to the state
   const [form, setForm] = useState({ 
     title: '', linkUrl: '', imageUrl: '', isActive: false, position: 'POPUP', duration: 5 
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState('');
 
-  useEffect(() => { loadFromStorage(); }, [loadFromStorage]);
+  // Initial load trigger
+  useEffect(() => { 
+    loadFromStorage(); 
+  }, [loadFromStorage]);
 
+  // ✅ FIX 2: Correct routing logic based on Zustand state, not localStorage
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) { router.push('/api/v1/auth/s/o/n/a/m/o/u/l/i/u/m/y/a'); return; }
-    if (user && user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN') {
-      router.push('/newsroom-bcn-2024');
-    } else if (user) {
-      fetchAllSponsors();
+    if (authLoading) return; // Wait for session check to complete
+
+    if (!isAuthenticated || !user) {
+      // Redirect to the correct frontend login path, NOT the backend API path
+      router.push('/auth/login'); 
+      return;
     }
-  }, [isAuthenticated, user, router]);
+
+    if (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN') {
+      router.push('/newsroom-bcn-2024');
+      return;
+    }
+
+    // Safe to fetch data
+    fetchAllSponsors();
+  }, [isAuthenticated, user, authLoading, router]);
 
   const fetchAllSponsors = async () => {
     try {
@@ -99,6 +111,11 @@ export default function SponsorManagerPage() {
     }
   };
 
+  // ✅ Prevent UI flashing while checking authentication
+  if (authLoading) {
+    return <div className="min-h-screen flex items-center justify-center bg-[#0A1A3A] text-white">Loading...</div>;
+  }
+
   if (!isAuthenticated || !user) return null;
 
   return (
@@ -122,7 +139,6 @@ export default function SponsorManagerPage() {
                     <option value="SIDEBAR">📱 সাইডবার (Sidebar)</option>
                   </select>
                 </div>
-                {/* 🔹 Duration Input */}
                 <div className="w-1/3">
                   <label className="text-gray-300 text-xs uppercase mb-1 block">সময় (সেকেন্ড)</label>
                   <input type="number" min="0" value={form.duration} onChange={e => setForm({...form, duration: parseInt(e.target.value) || 0})} className="w-full bg-[#0A1A3A]/80 text-white border border-[#D4AF37]/30 rounded p-3 focus:outline-none focus:border-[#D4AF37]" placeholder="5" />
@@ -155,12 +171,19 @@ export default function SponsorManagerPage() {
                 {imagePreview ? (
                   <div className="relative w-full h-full">
                     <img src={imagePreview} className="w-full h-full object-contain rounded bg-black/50" />
-                    <button onClick={() => { setImageFile(null); setImagePreview(''); setForm({...form, imageUrl: ''}); }} className="absolute top-2 right-2 bg-red-500 text-white w-8 h-8 rounded-full shadow-xl">✕</button>
+                    <button type="button" onClick={() => { setImageFile(null); setImagePreview(''); setForm({...form, imageUrl: ''}); }} className="absolute top-2 right-2 bg-red-500 text-white w-8 h-8 rounded-full shadow-xl">✕</button>
                   </div>
                 ) : (
                   <label className="block w-full h-full border-2 border-dashed border-[#D4AF37]/40 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-[#D4AF37] hover:bg-[#D4AF37]/5 transition-all">
                     <div className="text-[#D4AF37] text-4xl mb-3">📸</div>
                     <div className="text-white text-sm font-bold">ছবি সিলেক্ট করুন</div>
+                    {/* ✅ FIX 3: Added the missing hidden input so the browser actually opens a file picker! */}
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleImage} 
+                      className="hidden" 
+                    />
                   </label>
                 )}
               </div>
@@ -168,8 +191,8 @@ export default function SponsorManagerPage() {
           </div>
 
           <div className="mt-6 flex justify-end gap-4">
-            {editingId && <button onClick={resetForm} className="px-6 py-3 rounded text-white border border-gray-500 hover:bg-gray-800">বাতিল</button>}
-            <button onClick={handleSave} disabled={loading || (!form.imageUrl && !imageFile)} className="px-8 py-3 rounded font-bold text-[#0A1A3A] transition-all hover:scale-105 disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #D4AF37, #B8960C)' }}>
+            {editingId && <button type="button" onClick={resetForm} className="px-6 py-3 rounded text-white border border-gray-500 hover:bg-gray-800">বাতিল</button>}
+            <button type="button" onClick={handleSave} disabled={loading || (!form.imageUrl && !imageFile)} className="px-8 py-3 rounded font-bold text-[#0A1A3A] transition-all hover:scale-105 disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #D4AF37, #B8960C)' }}>
               {loading ? '...' : 'সেভ করুন'}
             </button>
           </div>
@@ -204,8 +227,8 @@ export default function SponsorManagerPage() {
                       </span>
                     </td>
                     <td className="p-4 text-right">
-                      <button onClick={() => handleEdit(ad)} className="text-blue-400 hover:bg-blue-500/20 px-3 py-1 rounded mr-2">Edit</button>
-                      <button onClick={() => handleDelete(ad.id)} className="text-red-400 hover:bg-red-500/20 px-3 py-1 rounded">Delete</button>
+                      <button type="button" onClick={() => handleEdit(ad)} className="text-blue-400 hover:bg-blue-500/20 px-3 py-1 rounded mr-2">Edit</button>
+                      <button type="button" onClick={() => handleDelete(ad.id)} className="text-red-400 hover:bg-red-500/20 px-3 py-1 rounded">Delete</button>
                     </td>
                   </tr>
                 ))}
@@ -213,7 +236,6 @@ export default function SponsorManagerPage() {
             </table>
           </div>
         </div>
-
       </div>
     </div>
   );

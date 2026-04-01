@@ -20,12 +20,15 @@ import {
 } from 'lucide-react';
 
 export default function AdminDashboard() {
-  const { user, isAuthenticated, loadFromStorage, logout } = useAuthStore();
+  // ✅ FIX 1: Extract `isLoading` from Zustand as `authLoading`
+  const { user, isAuthenticated, isLoading: authLoading, loadFromStorage, logout } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
+  
+  // ✅ FIX 2: Create a separate state for data loading
+  const [dataLoading, setDataLoading] = useState(true);
   const [stats, setStats] = useState({ articles: 0, published: 0, draft: 0, users: 0 });
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
 
   // 1. Load user from storage on mount
   useEffect(() => {
@@ -35,6 +38,7 @@ export default function AdminDashboard() {
   const fetchDashboardData = async () => {
     if (!user) return;
     try {
+      setDataLoading(true); // Start data loading
       const timestamp = new Date().getTime();
       const authorFilter = user.role === 'JOURNALIST' ? `&authorId=${user.id}` : '';
       const isJournalist = user.role === 'JOURNALIST';
@@ -65,47 +69,48 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error("Dashboard data fetch error:", err);
     } finally {
-      setLoading(false);
+      setDataLoading(false); // End data loading
     }
   };
 
-  // 🔹 2. RACE CONDITION FIX: Check localStorage directly to prevent false logouts
+  // 🔹 FIX 3: RACE CONDITION & DEADLOCK RESOLVED
   useEffect(() => {
-  if (loading) return;
+    // Wait until the Zustand store finishes checking cookies with the backend
+    if (authLoading) return;
 
-  if (!isAuthenticated || !user) {
-    router.push('/auth/login');
-    return;
-  }
+    // If check finishes and user is not authenticated, kick them out
+    if (!isAuthenticated || !user) {
+      router.push('/auth/login');
+      return;
+    }
 
-  fetchDashboardData();
-}, [isAuthenticated, user, loading, router]);
+    // Only fetch data once authentication is fully confirmed
+    fetchDashboardData();
+  }, [isAuthenticated, user, authLoading, router]);
 
-
-  // 🔹 3. 5-MINUTE AUTO LOGOUT (Works seamlessly in the background)
+  // 🔹 5-MINUTE AUTO LOGOUT (Works seamlessly in the background)
   useEffect(() => {
-  if (!isAuthenticated) return;
+    if (!isAuthenticated) return;
 
-  let timeoutId: NodeJS.Timeout;
+    let timeoutId: NodeJS.Timeout;
 
-  const resetTimer = () => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => {
-      logout();
-    }, 30 * 60 * 1000); // 30 minutes
-  };
+    const resetTimer = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        logout();
+      }, 30 * 60 * 1000); // 30 minutes
+    };
 
-  const events = ['mousemove', 'keydown', 'mousedown', 'scroll', 'touchstart'];
-  events.forEach((event) => window.addEventListener(event, resetTimer));
+    const events = ['mousemove', 'keydown', 'mousedown', 'scroll', 'touchstart'];
+    events.forEach((event) => window.addEventListener(event, resetTimer));
 
-  resetTimer();
+    resetTimer();
 
-  return () => {
-    clearTimeout(timeoutId);
-    events.forEach((event) => window.removeEventListener(event, resetTimer));
-  };
-}, [isAuthenticated, logout]);
-
+    return () => {
+      clearTimeout(timeoutId);
+      events.forEach((event) => window.removeEventListener(event, resetTimer));
+    };
+  }, [isAuthenticated, logout]);
 
   const handlePublish = async (id: string) => {
     try {
@@ -126,23 +131,22 @@ export default function AdminDashboard() {
     }
   };
 
-  // Prevent UI flashing before auth loads
-  if (loading) {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0A1A3A] text-white">
-      Loading admin panel...
-    </div>
-  );
-}
+  // ✅ FIX 4: Block render if EITHER auth is checking OR data is loading
+  if (authLoading || dataLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0A1A3A] text-white">
+        Loading admin panel...
+      </div>
+    );
+  }
 
-if (!isAuthenticated || !user) return null;
-
+  if (!isAuthenticated || !user) return null;
 
   const sidebarLinks = [
     { label: 'ড্যাশবোর্ড', href: '/newsroom-bcn-2024', icon: <LayoutDashboard size={18} /> },
     { label: 'সব সংবাদ', href: '/newsroom-bcn-2024/articles', icon: <FileText size={18} /> },
     { label: 'ইউজার ম্যানেজমেন্ট', href: '/newsroom-bcn-2024/users', icon: <UsersIcon size={18} /> },
-    { label: 'বিজ্ঞাপন (Sponsor)', href: '/newsroom-bcn-2024/sponsor', icon: <AlertCircle size={18} /> }, // 🔹 NEW link fro sponser
+    { label: 'বিজ্ঞাপন (Sponsor)', href: '/newsroom-bcn-2024/sponsor', icon: <AlertCircle size={18} /> },
     { label: 'সেটিংস', href: '/newsroom-bcn-2024/settings', icon: <Settings size={18} /> },
   ];
 
@@ -266,10 +270,10 @@ if (!isAuthenticated || !user) return null;
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-            <StatCard icon={<FileText />} label="মোট সংবাদ" value={stats.articles} loading={loading} />
-            <StatCard icon={<CheckCircle />} label="প্রকাশিত" value={stats.published} loading={loading} />
-            <StatCard icon={<Clock />} label="ড্রাফট" value={stats.draft} loading={loading} />
-            <StatCard icon={<UsersIcon />} label="ইউজার" value={stats.users} loading={loading} />
+            <StatCard icon={<FileText />} label="মোট সংবাদ" value={stats.articles} loading={dataLoading} />
+            <StatCard icon={<CheckCircle />} label="প্রকাশিত" value={stats.published} loading={dataLoading} />
+            <StatCard icon={<Clock />} label="ড্রাফট" value={stats.draft} loading={dataLoading} />
+            <StatCard icon={<UsersIcon />} label="ইউজার" value={stats.users} loading={dataLoading} />
           </div>
 
           <div className="rounded-xl overflow-hidden shadow-2xl"
@@ -298,7 +302,7 @@ if (!isAuthenticated || !user) return null;
                   </tr>
                 </thead>
                 <tbody>
-                  {loading ? (
+                  {dataLoading ? (
                     <tr><td colSpan={4} className="px-6 py-12 text-center" style={{ color: 'rgba(122,134,182,0.8)' }}>লোড হচ্ছে...</td></tr>
                   ) : recentArticles.length === 0 ? (
                     <tr><td colSpan={4} className="px-6 py-12 text-center" style={{ color: 'rgba(122,134,182,0.8)' }}>কোনো ডেটা পাওয়া যায়নি</td></tr>

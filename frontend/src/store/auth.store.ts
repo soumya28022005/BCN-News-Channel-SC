@@ -3,7 +3,6 @@ import { User } from '../types';
 
 interface AuthState {
   user: User | null;
-  accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
 
@@ -16,10 +15,10 @@ const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  accessToken: null,
   isAuthenticated: false,
   isLoading: false,
 
+  // 🔥 LOGIN (COOKIE BASED)
   login: async (email, password) => {
     set({ isLoading: true });
 
@@ -27,16 +26,16 @@ export const useAuthStore = create<AuthState>((set) => ({
       const res = await fetch(`${API}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        credentials: 'include', // ✅ VERY IMPORTANT
         body: JSON.stringify({ email, password }),
       });
 
       const data = await res.json();
+      console.log("LOGIN RESPONSE:", data);
 
       if (!res.ok || !data.success) {
         set({
           user: null,
-          accessToken: null,
           isAuthenticated: false,
           isLoading: false,
         });
@@ -49,22 +48,15 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       set({
         user: data.data.user,
-        accessToken: null,
         isAuthenticated: true,
         isLoading: false,
       });
 
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
-      }
-
       return { success: true };
+
     } catch {
       set({
         user: null,
-        accessToken: null,
         isAuthenticated: false,
         isLoading: false,
       });
@@ -73,46 +65,43 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
+  // 🔥 LOGOUT
   logout: async () => {
     try {
       await fetch(`${API}/auth/logout`, {
         method: 'POST',
-        credentials: 'include',
+        credentials: 'include', // ✅ cookie clear
       });
     } catch {
-      // ignore network logout failure
-    }
-
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('user');
-      window.location.href = '/auth/login';
+      // ignore
     }
 
     set({
       user: null,
-      accessToken: null,
       isAuthenticated: false,
       isLoading: false,
     });
+
+    window.location.href = '/auth/login';
   },
 
+  // 🔥 AUTO LOGIN (COOKIE CHECK)
   loadFromStorage: async () => {
     set({ isLoading: true });
 
     try {
       const res = await fetch(`${API}/auth/me`, {
         method: 'GET',
-        credentials: 'include',
+        credentials: 'include', // ✅ VERY IMPORTANT
       });
 
       const data = await res.json();
 
+      console.log("ME RESPONSE:", data);
+
       if (res.ok && data.success && data.data) {
         set({
           user: data.data,
-          accessToken: null,
           isAuthenticated: true,
           isLoading: false,
         });
@@ -124,10 +113,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     set({
       user: null,
-      accessToken: null,
       isAuthenticated: false,
       isLoading: false,
     });
   },
 }));
-

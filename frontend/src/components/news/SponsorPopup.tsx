@@ -23,7 +23,7 @@ export default function SponsorPopup() {
       const lastShown = localStorage.getItem('bcn_last_popup_time');
       const now = Date.now();
       // time uo 10 min
-      const tenMinutes = 10 * 60 * 1000; 
+      const tenMinutes = 1000; 
 
       if (!lastShown || now - parseInt(lastShown) >= tenMinutes) {
         try {

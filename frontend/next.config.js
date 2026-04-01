@@ -3,19 +3,21 @@ const imageHosts = (process.env.NEXT_PUBLIC_IMAGE_HOSTS || 'res.cloudinary.com')
   .map((host) => host.trim())
   .filter(Boolean);
 
+/** @type {import('next').NextConfig} */
 const nextConfig = {
-  compress: true,
-  poweredByHeader: false,
+  allowedDevOrigins: ['192.168.31.205'], // 🔥 ADD THIS
+
   images: {
-    formats: ['image/avif', 'image/webp'],
-    minimumCacheTTL: 60,
-    remotePatterns: imageHosts.map((hostname) => ({
-      protocol: 'https',
-      hostname,
-    })),
-  },
-  experimental: {
-    optimizePackageImports: ['lucide-react'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+      {
+        protocol: 'http',
+        hostname: '**',
+      },
+    ],
   },
 };
 
