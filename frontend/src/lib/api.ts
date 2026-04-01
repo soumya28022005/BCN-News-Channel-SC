@@ -1,4 +1,15 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+let API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+
+// 2. CRITICAL FIX: If we are running in the browser on a mobile device/LAN, 
+// we MUST rewrite "localhost" to match the device's actual IP address.
+if (typeof window !== 'undefined') {
+  const currentHost = window.location.hostname;
+  
+  // If the .env says "localhost" but you are visiting via "192.168.x.x"
+  if (API_BASE.includes('localhost') && currentHost !== 'localhost') {
+    API_BASE = API_BASE.replace('localhost', currentHost);
+  }
+}
 
 async function tryRefresh(): Promise<boolean> {
   try {
@@ -7,7 +18,6 @@ async function tryRefresh(): Promise<boolean> {
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
     });
-
     return res.ok;
   } catch {
     return false;
@@ -44,7 +54,6 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
         localStorage.removeItem('user');
         window.location.href = '/auth/login';
       }
-
       throw new Error('Unauthorized');
     }
   }
@@ -58,6 +67,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   return data;
 }
 
+// ✅ Restored missing export block!
 export const api = {
   get: <T>(endpoint: string) => request<T>(endpoint),
 

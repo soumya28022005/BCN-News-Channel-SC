@@ -5,7 +5,6 @@ import { api } from '@/lib/api';
 export default function FixedAd() {
   const [sponsors, setSponsors] = useState<any[]>([]);
 
-  // Helper function to ensure external links open correctly
   const ensureAbsoluteUrl = (url: string) => {
     if (!url) return '#';
     return url.startsWith('http') ? url : `https://${url}`;
@@ -14,12 +13,16 @@ export default function FixedAd() {
   useEffect(() => {
     const fetchSponsors = async () => {
       try {
-        const res = await api.get<any>('/sponsor');
-        const sidebarAds = res.data?.filter((ad: any) => ad.position === 'SIDEBAR' && ad.isActive);
-        if (sidebarAds && sidebarAds.length > 0) {
-          setSponsors(sidebarAds);
-        }
-      } catch (err) {}
+        // ✅ FIX 1: Cache busting to instantly fetch new ads after submission
+        const res = await api.get<any>(`/sponsor?_t=${Date.now()}`);
+        const sidebarAds = res.data?.filter((ad: any) => ad.position === 'SIDEBAR' && ad.isActive) || [];
+        
+        // ✅ FIX 2: Removed the `if(length > 0)` check. 
+        // We MUST update state even if empty, so deleted ads disappear from UI!
+        setSponsors(sidebarAds);
+      } catch (err) {
+        console.error("Ad fetch error", err);
+      }
     };
     fetchSponsors();
   }, []);
@@ -36,7 +39,6 @@ export default function FixedAd() {
             <span className="text-[9px] uppercase tracking-widest text-white/60 font-mono">Advertisement</span>
           </div>
 
-          {/* 🔹 FIXED: Link logic added here 🔹 */}
           <a 
             href={ensureAbsoluteUrl(sponsor.linkUrl)} 
             target="_blank" 
@@ -54,5 +56,3 @@ export default function FixedAd() {
     </div>
   );
 }
-
-//src>components>news>FixedAd.tsx
