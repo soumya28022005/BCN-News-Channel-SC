@@ -5,6 +5,11 @@ export interface AdData {
   linkUrl?: string;
 }
 
+const getValidUrl = (url?: string) => {
+  if (!url) return '#';
+  return url.startsWith('http') ? url : `https://${url}`;
+};
+
 /**
  * Injects ads into HTML content safely after every 2 paragraphs.
  * Randomly selects ads so different users see different ad combinations.
@@ -14,7 +19,6 @@ export function injectInContentAds(htmlContent: string, inContentAds: AdData[]):
     return htmlContent;
   }
 
-  // Split content by closing paragraph tags
   const paragraphs = htmlContent.split('</p>');
   let newContent = '';
 
@@ -24,17 +28,14 @@ export function injectInContentAds(htmlContent: string, inContentAds: AdData[]):
        newContent += pSegment + '</p>';
     }
 
-    // প্রতি ২টি প্যারাগ্রাফ পর পর একটি অ্যাড বসবে
     if ((i + 1) % 2 === 0 && i < paragraphs.length - 1) {
-      
-      // ✅ FIX: এখানে র‍্যান্ডম (Random) ভাবে যেকোনো একটি অ্যাড সিলেক্ট করা হচ্ছে
       const randomIndex = Math.floor(Math.random() * inContentAds.length);
       const ad = inContentAds[randomIndex];
       
       const adHtml = `
         <div class="my-10 w-full flex flex-col items-center justify-center p-4 rounded-2xl transition-colors" style="background: var(--bg3); border: 1px dashed var(--border);">
           <span class="text-[10px] uppercase tracking-widest mb-3 font-bold opacity-50" style="color: var(--text);">Advertisement</span>
-          <a href="${ad.linkUrl || '#'}" target="_blank" rel="noopener noreferrer nofollow" class="block w-full max-w-[728px] mx-auto overflow-hidden rounded-xl shadow-md hover:opacity-90 hover:scale-[1.01] transition-all duration-300">
+          <a href="${getValidUrl(ad.linkUrl)}" target="_blank" rel="noopener noreferrer nofollow" class="block w-full max-w-[728px] mx-auto overflow-hidden rounded-xl shadow-md hover:opacity-90 hover:scale-[1.01] transition-all duration-300">
             <img 
               src="${ad.imageUrl}" 
               alt="${ad.title || 'Advertisement'}" 

@@ -3,6 +3,11 @@ import { useEffect, useState } from 'react';
 import { AD_CONFIG } from '../../config/ads.config';
 import { api } from '../../lib/api';
 
+const getValidUrl = (url?: string) => {
+  if (!url) return '#';
+  return url.startsWith('http') ? url : `https://${url}`;
+};
+
 export default function BottomStickyAd() {
   const [ads, setAds] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -39,7 +44,6 @@ export default function BottomStickyAd() {
   const currentAd = ads[currentIndex];
 
   return (
-    // ✅ FIX: <div className="h-[80px]" /> স্পেসারটি এখান থেকে পুরোপুরি মুছে দেওয়া হয়েছে।
     <div className="fixed bottom-0 left-0 right-0 z-[100] flex justify-center p-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] transition-all duration-300" style={{ background: 'var(--bg2)', borderTop: '1px solid var(--border)' }}>
       <div className="relative w-full max-w-[720px] rounded-lg overflow-hidden bg-white dark:bg-[#0A1A3A] transition-opacity duration-500 border border-gray-200 dark:border-gray-800">
         
@@ -61,7 +65,8 @@ export default function BottomStickyAd() {
                  data-ad-client={AD_CONFIG.ADSENSE_CLIENT_ID}></ins>
           </div>
         ) : (
-          <a href={currentAd?.linkUrl || '#'} target="_blank" rel="noreferrer" className="block w-full flex justify-center py-0.5">
+          /* ✅ FIX: getValidUrl ব্যবহার করা হয়েছে */
+          <a href={getValidUrl(currentAd?.linkUrl)} target="_blank" rel="noreferrer" className="block w-full flex justify-center py-0.5">
             <img 
               src={currentAd?.imageUrl} 
               alt="Advertisement" 

@@ -2,6 +2,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '@/lib/api';
 
+const getValidUrl = (url?: string) => {
+  if (!url) return '#';
+  return url.startsWith('http') ? url : `https://${url}`;
+};
+
 export default function SponsorPopup() {
   const [sponsor, setSponsor] = useState<any>(null);
   const [show, setShow] = useState(false);
@@ -17,7 +22,7 @@ export default function SponsorPopup() {
       const lastShown = localStorage.getItem('bcn_last_popup_time');
       const now = Date.now();
       
-      const tenMinutes = 10  * 1000; // ১০ মিনিট
+      const tenMinutes = 3 * 1000; // ১০ মিনিট thik kor
 
       if (!lastShown || now - parseInt(lastShown) >= tenMinutes) {
         try {
@@ -58,7 +63,8 @@ export default function SponsorPopup() {
       style={{ background: 'rgba(10,26,58,0.75)', backdropFilter: 'blur(14px)' }}>
       <div className="relative max-w-4xl w-full rounded-2xl overflow-hidden shadow-[0_24px_80px_rgba(0,0,0,0.9)] animate-in zoom-in-95 duration-500"
         style={{ border: '1px solid rgba(212,175,55,0.4)', background: '#0A0A0F' }}>
-        <a href={sponsor.linkUrl || '#'} target="_blank" rel="noopener noreferrer" className="block cursor-pointer">
+        {/* ✅ FIX: getValidUrl ব্যবহার করা হয়েছে */}
+        <a href={getValidUrl(sponsor.linkUrl)} target="_blank" rel="noopener noreferrer" className="block cursor-pointer">
           <img src={sponsor.imageUrl} alt="Sponsor" className="w-full h-auto max-h-[80vh] object-contain bg-black transition-transform duration-500 hover:scale-[1.02]" />
         </a>
         <div className="absolute top-4 left-4 px-3 py-1 text-xs font-semibold rounded-full shadow-lg"
