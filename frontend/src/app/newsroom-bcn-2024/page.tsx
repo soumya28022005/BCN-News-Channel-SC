@@ -16,21 +16,19 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
-  Edit 
+  Edit,
+  Radio // 🔹 নতুন আইকন Ticker এর জন্য
 } from 'lucide-react';
 
 export default function AdminDashboard() {
-  // ✅ FIX 1: Extract `isLoading` from Zustand as `authLoading`
   const { user, isAuthenticated, isLoading: authLoading, loadFromStorage, logout } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
   
-  // ✅ FIX 2: Create a separate state for data loading
   const [dataLoading, setDataLoading] = useState(true);
   const [stats, setStats] = useState({ articles: 0, published: 0, draft: 0, users: 0 });
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
 
-  // 1. Load user from storage on mount
   useEffect(() => {
     loadFromStorage();
   }, [loadFromStorage]);
@@ -38,7 +36,7 @@ export default function AdminDashboard() {
   const fetchDashboardData = async () => {
     if (!user) return;
     try {
-      setDataLoading(true); // Start data loading
+      setDataLoading(true);
       const timestamp = new Date().getTime();
       const authorFilter = user.role === 'JOURNALIST' ? `&authorId=${user.id}` : '';
       const isJournalist = user.role === 'JOURNALIST';
@@ -69,26 +67,21 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error("Dashboard data fetch error:", err);
     } finally {
-      setDataLoading(false); // End data loading
+      setDataLoading(false);
     }
   };
 
-  // 🔹 FIX 3: RACE CONDITION & DEADLOCK RESOLVED
   useEffect(() => {
-    // Wait until the Zustand store finishes checking cookies with the backend
     if (authLoading) return;
 
-    // If check finishes and user is not authenticated, kick them out
     if (!isAuthenticated || !user) {
       router.push('/auth/login');
       return;
     }
 
-    // Only fetch data once authentication is fully confirmed
     fetchDashboardData();
   }, [isAuthenticated, user, authLoading, router]);
 
-  // 🔹 5-MINUTE AUTO LOGOUT (Works seamlessly in the background)
   useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -98,7 +91,7 @@ export default function AdminDashboard() {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
         logout();
-      }, 30 * 60 * 1000); // 30 minutes
+      }, 30 * 60 * 1000);
     };
 
     const events = ['mousemove', 'keydown', 'mousedown', 'scroll', 'touchstart'];
@@ -131,10 +124,9 @@ export default function AdminDashboard() {
     }
   };
 
-  // ✅ FIX 4: Block render if EITHER auth is checking OR data is loading
   if (authLoading || dataLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0A1A3A] text-white">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0A1A3A] text-white">
         Loading admin panel...
       </div>
     );
@@ -142,24 +134,24 @@ export default function AdminDashboard() {
 
   if (!isAuthenticated || !user) return null;
 
+  // 🔹 নতুন "ফ্ল্যাশ নিউজ (Ticker)" সাইডবারে অ্যাড করা হলো
   const sidebarLinks = [
     { label: 'ড্যাশবোর্ড', href: '/newsroom-bcn-2024', icon: <LayoutDashboard size={18} /> },
     { label: 'সব সংবাদ', href: '/newsroom-bcn-2024/articles', icon: <FileText size={18} /> },
     { label: 'ইউজার ম্যানেজমেন্ট', href: '/newsroom-bcn-2024/users', icon: <UsersIcon size={18} /> },
     { label: 'বিজ্ঞাপন (Sponsor)', href: '/newsroom-bcn-2024/sponsor', icon: <AlertCircle size={18} /> },
+    { label: 'ফ্ল্যাশ নিউজ (Ticker)', href: '/newsroom-bcn-2024/ticker', icon: <Radio size={18} /> },
     { label: 'সেটিংস', href: '/newsroom-bcn-2024/settings', icon: <Settings size={18} /> },
   ];
 
   return (
-    <div className="flex min-h-screen relative font-bangla" style={{ background: 'radial-gradient(circle at top, #1A2E5A, #0A1A3A)' }}>
-      {/* Ambient Gold Glow Background */}
+    <div className="fixed inset-0 z-50 flex font-bangla overflow-hidden" style={{ background: 'radial-gradient(circle at top, #1A2E5A, #0A1A3A)' }}>
       <div style={{
-        position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
+        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
         background: 'radial-gradient(circle at top, rgba(212,175,55,0.08), transparent 60%)',
       }} />
 
-      {/* Sidebar - Glassmorphism applied */}
-      <aside className="w-64 hidden lg:flex flex-col sticky top-0 h-screen z-10"
+      <aside className="w-64 hidden lg:flex flex-col h-full z-10"
         style={{
           background: 'rgba(10,26,58,0.7)',
           backdropFilter: 'blur(10px)',
@@ -175,11 +167,14 @@ export default function AdminDashboard() {
           </Link>
         </div>
 
-        <nav className="flex-1 px-4 space-y-2 mt-4">
+        <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
           {sidebarLinks.map((link) => {
-            if (user?.role === 'JOURNALIST' && link.href === '/newsroom-bcn-2024/users') {
-              return null;
+            // 🔹 FIX: শুধুমাত্র Admin / Super Admin রা ইউজার, সেটিং এবং ফ্ল্যাশ নিউজ দেখতে পাবে
+            const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+            if (!isAdmin && ['/newsroom-bcn-2024/users', '/newsroom-bcn-2024/ticker', '/newsroom-bcn-2024/settings'].includes(link.href)) {
+              return null; // Journalist রা এই মেনুগুলো দেখতে পাবে না
             }
+            
             const isActive = pathname === link.href;
             return (
               <Link
@@ -232,8 +227,7 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 min-w-0 overflow-auto z-10 relative">
+      <main className="flex-1 h-full overflow-y-auto z-10 relative">
         <header className="px-8 py-4 sticky top-0 z-20 flex items-center justify-between"
           style={{
             background: 'rgba(10,26,58,0.7)',

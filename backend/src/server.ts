@@ -30,6 +30,7 @@ import analyticsRoutes from './routes/analytics.routes';
 import newsletterRoutes from './routes/newsletter.routes';
 import sitemapRoutes from './routes/sitemap.routes';
 import sponsorRoutes from './routes/sponsor.routes';
+import settingsRoutes from './routes/settings.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -94,6 +95,7 @@ app.use(`${API}/analytics`, analyticsRoutes);
 app.use(`${API}/newsletter`, newsletterRoutes);
 app.use(sitemapRoutes);
 app.use(`${API}/sponsor`, sponsorRoutes);
+app.use(`${API}/settings`, settingsRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
