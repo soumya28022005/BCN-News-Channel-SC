@@ -476,8 +476,7 @@ GOOGLE_VERIFICATION_TOKEN=your-google-token
 ---
 
 ## FOR ADMIN USER AND PASSWORD
-Email:    admin@bengalchronicle.com
-Password: Admin@BCN2024!
+
 
 ## backend check
 http://localhost:3000/auth/login
