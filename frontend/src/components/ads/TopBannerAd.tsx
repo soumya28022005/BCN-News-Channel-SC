@@ -1,21 +1,24 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { AD_CONFIG } from '../../config/ads.config';
-import { api } from '../../lib/api';
+import { api } from '../../lib/api'; // ✅ FIX: Imported the global API client
 
 export default function TopBannerAd() {
   const [ad, setAd] = useState<any>(null);
 
   useEffect(() => {
-    if (AD_CONFIG.ADSENSE_ENABLED) return; 
+    if (AD_CONFIG.ADSENSE_ENABLED) return; // Skip fetching if AdSense is active
 
     const fetchAd = async () => {
       try {
-        // ✅ Using global `api` client which handles dynamic mobile IPs
+        // ✅ FIX: Replaced raw fetch with api.get() to resolve mobile IPs
         const res = await api.get<any>('/sponsor');
         const adsArray = res.data || res;
-        const topAd = adsArray.find((a: any) => a.position === 'TOP' && a.isActive);
-        if (topAd) setAd(topAd);
+        
+        if (Array.isArray(adsArray)) {
+          const topAd = adsArray.find((a: any) => a.position === 'TOP' && a.isActive);
+          if (topAd) setAd(topAd);
+        }
       } catch (error) {
         console.warn("Top Ad fetch failed", error);
       }

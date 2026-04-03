@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { AD_CONFIG } from '../../config/ads.config';
-import { api } from '../../lib/api'; 
+import { api } from '../../lib/api'; // ✅ FIX: Imported the global API client
 
 export default function BottomStickyAd() {
   const [ad, setAd] = useState<any>(null);
@@ -12,7 +12,7 @@ export default function BottomStickyAd() {
 
     const fetchAd = async () => {
       try {
-        // ✅ Using global `api` client which handles dynamic mobile IPs
+        // ✅ FIX: Replaced raw fetch with api.get()
         const res = await api.get<any>('/sponsor');
         const adsArray = res.data || res;
 
@@ -40,8 +40,10 @@ export default function BottomStickyAd() {
   return (
     <>
       <div className="h-[80px] lg:hidden" />
+      
       <div className="fixed bottom-0 left-0 right-0 z-[100] flex justify-center p-2 lg:hidden shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] transition-all duration-300" style={{ background: 'var(--bg2)', borderTop: '1px solid var(--border)' }}>
         <div className="relative w-full max-w-[720px] rounded-lg overflow-hidden bg-white dark:bg-black">
+          
           <button 
             onClick={() => setVisible(false)} 
             className="absolute top-1 right-1 z-10 text-[10px] px-2 py-1 bg-black/70 hover:bg-black text-white rounded shadow"
@@ -49,6 +51,7 @@ export default function BottomStickyAd() {
           >
             ✕ Close
           </button>
+
           {AD_CONFIG.ADSENSE_ENABLED ? (
             <ins className="adsbygoogle"
                  style={{ display: 'inline-block', width: '100%', height: '80px' }}
