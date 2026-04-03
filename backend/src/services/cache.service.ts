@@ -20,7 +20,13 @@ export class CacheService {
 
   async set(key: string, value: any, ttl: number = 300): Promise<void> {
     try {
-      await this.client.setex(key, ttl, JSON.stringify(value, (_, v) => typeof v === "bigint" ? v.toString() : v));
+      await this.client.setex(
+        key,
+        ttl,
+        JSON.stringify(value, (_, v) =>
+          typeof v === 'bigint' ? v.toString() : v
+        )
+      );
     } catch (error) {
       logger.warn(`Cache SET error for key ${key}:`, error);
     }
@@ -34,12 +40,30 @@ export class CacheService {
     }
   }
 
+  /**
+   * 🔥 NON-BLOCKING CACHE INVALIDATION (Production Safe)
+   */
   async invalidatePattern(pattern: string): Promise<void> {
     try {
-      const keys = await this.client.keys(pattern);
-      if (keys.length > 0) {
-        await this.client.del(...keys);
-      }
+      let cursor = '0';
+
+      do {
+        const [nextCursor, keys] = await this.client.scan(
+          cursor,
+          'MATCH',
+          pattern,
+          'COUNT',
+          100
+        );
+
+        cursor = nextCursor;
+
+        if (keys.length > 0) {
+          await this.client.del(...keys);
+        }
+
+      } while (cursor !== '0');
+
     } catch (error) {
       logger.warn(`Cache INVALIDATE error for pattern ${pattern}:`, error);
     }
@@ -54,3 +78,5 @@ export class CacheService {
     }
   }
 }
+
+// this src>services>cache.service.ts

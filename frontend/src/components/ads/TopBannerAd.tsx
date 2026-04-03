@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { AD_CONFIG } from '../../config/ads.config';
+import { api } from '../../lib/api'; // ✅ FIX: Imported the global API client
 
 export default function TopBannerAd() {
   const [ad, setAd] = useState<any>(null);
@@ -10,13 +11,14 @@ export default function TopBannerAd() {
 
     const fetchAd = async () => {
       try {
-        const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-        const res = await fetch(`${API}/sponsor`);
-        if (!res.ok) return;
-        const json = await res.json();
-        const adsArray = json.data || json;
-        const topAd = adsArray.find((a: any) => a.position === 'TOP' && a.isActive);
-        if (topAd) setAd(topAd);
+        // ✅ FIX: Replaced raw fetch with api.get() to resolve mobile IPs
+        const res = await api.get<any>('/sponsor');
+        const adsArray = res.data || res;
+        
+        if (Array.isArray(adsArray)) {
+          const topAd = adsArray.find((a: any) => a.position === 'TOP' && a.isActive);
+          if (topAd) setAd(topAd);
+        }
       } catch (error) {
         console.warn("Top Ad fetch failed", error);
       }
@@ -27,7 +29,6 @@ export default function TopBannerAd() {
   if (AD_CONFIG.ADSENSE_ENABLED) {
     return (
       <div className="w-full flex justify-center my-4 overflow-hidden">
-        {/* Google AdSense Snippet */}
         <ins className="adsbygoogle"
              style={{ display: 'inline-block', width: '728px', height: '90px' }}
              data-ad-client={AD_CONFIG.ADSENSE_CLIENT_ID}

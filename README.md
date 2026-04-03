@@ -505,4 +505,4 @@ cd /Users/soumyachatterjee/Desktop/bcn-platform/backend && npx ts-node-dev --tra
 *"Truth. Speed. Bengal."*# BCN-News-Channel-SC
 # BCN-News-Channel-SC
 
-Soumya
+new some update this feature 1

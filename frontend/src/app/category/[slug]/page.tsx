@@ -1,5 +1,4 @@
-import Header from '../../../components/layout/Header';
-import Footer from '../../../components/layout/Footer';
+
 import SharedNewsLayout from '../../../components/news/SharedNewsLayout';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -40,7 +39,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
   return (
     <>
-      <Header />
+      
       {/* By passing pageTitle, the component knows to show the Category banner.
         It uses the exact same UI structure as your Homepage!
       */}
@@ -49,7 +48,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         trending={trending} 
         pageTitle={categoryName} 
       />
-      <Footer />
+     
     </>
   );
 }

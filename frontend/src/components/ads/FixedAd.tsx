@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { api } from '../../lib/api'; // ✅ FIX: Imported the global API client
 
 export default function FixedAd() {
   const [sponsors, setSponsors] = useState<any[]>([]);
@@ -7,14 +8,9 @@ export default function FixedAd() {
   useEffect(() => {
     const fetchSponsors = async () => {
       try {
-        const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-        const res = await fetch(`${API}/sponsor`);
-        
-        if (!res.ok) throw new Error('Backend responded with an error');
-        
-        const json = await res.json();
-        // Handle both standard arrays [{},{}] and wrapped objects { data: [{},{}] }
-        const adsArray = json.data || json; 
+        // ✅ FIX: Replaced raw fetch with api.get()
+        const res = await api.get<any>('/sponsor');
+        const adsArray = res.data || res; 
 
         if (Array.isArray(adsArray)) {
           const activeAds = adsArray.filter((ad: any) => ad.isActive);
@@ -23,7 +19,6 @@ export default function FixedAd() {
       } catch (error) {
         console.warn("⚠️ Ad System: Could not fetch sponsors from backend.", error);
         
-        // ✨ FALLBACK AD: Shows this if backend is down so your UI doesn't break
         setSponsors([{
           id: 'fallback-1',
           isActive: true,

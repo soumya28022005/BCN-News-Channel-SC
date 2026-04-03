@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { useAuthStore } from '../../store/authStore';
+import { useAuthStore } from '../../store/auth.store';
 import { api } from '../../lib/api';
 import { timeAgo } from '../../lib/utils';
 import { 
@@ -16,18 +16,19 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
-  Edit 
+  Edit,
+  Radio // 🔹 নতুন আইকন Ticker এর জন্য
 } from 'lucide-react';
 
 export default function AdminDashboard() {
-  const { user, isAuthenticated, loadFromStorage, logout } = useAuthStore();
+  const { user, isAuthenticated, isLoading: authLoading, loadFromStorage, logout } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
+  
+  const [dataLoading, setDataLoading] = useState(true);
   const [stats, setStats] = useState({ articles: 0, published: 0, draft: 0, users: 0 });
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  // 1. Load user from storage on mount
   useEffect(() => {
     loadFromStorage();
   }, [loadFromStorage]);
@@ -35,6 +36,7 @@ export default function AdminDashboard() {
   const fetchDashboardData = async () => {
     if (!user) return;
     try {
+      setDataLoading(true);
       const timestamp = new Date().getTime();
       const authorFilter = user.role === 'JOURNALIST' ? `&authorId=${user.id}` : '';
       const isJournalist = user.role === 'JOURNALIST';
@@ -65,47 +67,41 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error("Dashboard data fetch error:", err);
     } finally {
-      setLoading(false);
+      setDataLoading(false);
     }
   };
 
-  // 🔹 2. RACE CONDITION FIX: Check localStorage directly to prevent false logouts
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      router.push('/auth/login'); 
+    if (authLoading) return;
+
+    if (!isAuthenticated || !user) {
+      router.push('/auth/login');
       return;
     }
-    
-    // Only fetch data once Zustand has successfully loaded the user
-    if (isAuthenticated && user) {
-      fetchDashboardData(); 
-    }
-  }, [isAuthenticated, router, user]);
 
-  // 🔹 3. 5-MINUTE AUTO LOGOUT (Works seamlessly in the background)
+    fetchDashboardData();
+  }, [isAuthenticated, user, authLoading, router]);
+
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    if (!token || !isAuthenticated) return;
+    if (!isAuthenticated) return;
 
     let timeoutId: NodeJS.Timeout;
 
     const resetTimer = () => {
       clearTimeout(timeoutId);
-      // 300,000 ms = 5 minutes of total inactivity
       timeoutId = setTimeout(() => {
         logout();
-      }, 300000);
+      }, 30 * 60 * 1000);
     };
 
     const events = ['mousemove', 'keydown', 'mousedown', 'scroll', 'touchstart'];
-    events.forEach(event => window.addEventListener(event, resetTimer));
-    
+    events.forEach((event) => window.addEventListener(event, resetTimer));
+
     resetTimer();
 
     return () => {
       clearTimeout(timeoutId);
-      events.forEach(event => window.removeEventListener(event, resetTimer));
+      events.forEach((event) => window.removeEventListener(event, resetTimer));
     };
   }, [isAuthenticated, logout]);
 
@@ -128,27 +124,34 @@ export default function AdminDashboard() {
     }
   };
 
-  // Prevent UI flashing before auth loads
-  if (!isAuthenticated && !loading && !user) return null;
+  if (authLoading || dataLoading) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0A1A3A] text-white">
+        Loading admin panel...
+      </div>
+    );
+  }
 
+  if (!isAuthenticated || !user) return null;
+
+  // 🔹 নতুন "ফ্ল্যাশ নিউজ (Ticker)" সাইডবারে অ্যাড করা হলো
   const sidebarLinks = [
     { label: 'ড্যাশবোর্ড', href: '/newsroom-bcn-2024', icon: <LayoutDashboard size={18} /> },
     { label: 'সব সংবাদ', href: '/newsroom-bcn-2024/articles', icon: <FileText size={18} /> },
     { label: 'ইউজার ম্যানেজমেন্ট', href: '/newsroom-bcn-2024/users', icon: <UsersIcon size={18} /> },
-    { label: 'বিজ্ঞাপন (Sponsor)', href: '/newsroom-bcn-2024/sponsor', icon: <AlertCircle size={18} /> }, // 🔹 NEW link fro sponser
+    { label: 'বিজ্ঞাপন (Sponsor)', href: '/newsroom-bcn-2024/sponsor', icon: <AlertCircle size={18} /> },
+    { label: 'ফ্ল্যাশ নিউজ (Ticker)', href: '/newsroom-bcn-2024/ticker', icon: <Radio size={18} /> },
     { label: 'সেটিংস', href: '/newsroom-bcn-2024/settings', icon: <Settings size={18} /> },
   ];
 
   return (
-    <div className="flex min-h-screen relative font-bangla" style={{ background: 'radial-gradient(circle at top, #1A2E5A, #0A1A3A)' }}>
-      {/* Ambient Gold Glow Background */}
+    <div className="fixed inset-0 z-50 flex font-bangla overflow-hidden" style={{ background: 'radial-gradient(circle at top, #1A2E5A, #0A1A3A)' }}>
       <div style={{
-        position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
+        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
         background: 'radial-gradient(circle at top, rgba(212,175,55,0.08), transparent 60%)',
       }} />
 
-      {/* Sidebar - Glassmorphism applied */}
-      <aside className="w-64 hidden lg:flex flex-col sticky top-0 h-screen z-10"
+      <aside className="w-64 hidden lg:flex flex-col h-full z-10"
         style={{
           background: 'rgba(10,26,58,0.7)',
           backdropFilter: 'blur(10px)',
@@ -164,11 +167,14 @@ export default function AdminDashboard() {
           </Link>
         </div>
 
-        <nav className="flex-1 px-4 space-y-2 mt-4">
+        <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
           {sidebarLinks.map((link) => {
-            if (user?.role === 'JOURNALIST' && link.href === '/newsroom-bcn-2024/users') {
-              return null;
+            // 🔹 FIX: শুধুমাত্র Admin / Super Admin রা ইউজার, সেটিং এবং ফ্ল্যাশ নিউজ দেখতে পাবে
+            const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+            if (!isAdmin && ['/newsroom-bcn-2024/users', '/newsroom-bcn-2024/ticker', '/newsroom-bcn-2024/settings'].includes(link.href)) {
+              return null; // Journalist রা এই মেনুগুলো দেখতে পাবে না
             }
+            
             const isActive = pathname === link.href;
             return (
               <Link
@@ -221,8 +227,7 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 min-w-0 overflow-auto z-10 relative">
+      <main className="flex-1 h-full overflow-y-auto z-10 relative">
         <header className="px-8 py-4 sticky top-0 z-20 flex items-center justify-between"
           style={{
             background: 'rgba(10,26,58,0.7)',
@@ -259,10 +264,10 @@ export default function AdminDashboard() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-            <StatCard icon={<FileText />} label="মোট সংবাদ" value={stats.articles} loading={loading} />
-            <StatCard icon={<CheckCircle />} label="প্রকাশিত" value={stats.published} loading={loading} />
-            <StatCard icon={<Clock />} label="ড্রাফট" value={stats.draft} loading={loading} />
-            <StatCard icon={<UsersIcon />} label="ইউজার" value={stats.users} loading={loading} />
+            <StatCard icon={<FileText />} label="মোট সংবাদ" value={stats.articles} loading={dataLoading} />
+            <StatCard icon={<CheckCircle />} label="প্রকাশিত" value={stats.published} loading={dataLoading} />
+            <StatCard icon={<Clock />} label="ড্রাফট" value={stats.draft} loading={dataLoading} />
+            <StatCard icon={<UsersIcon />} label="ইউজার" value={stats.users} loading={dataLoading} />
           </div>
 
           <div className="rounded-xl overflow-hidden shadow-2xl"
@@ -291,7 +296,7 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {loading ? (
+                  {dataLoading ? (
                     <tr><td colSpan={4} className="px-6 py-12 text-center" style={{ color: 'rgba(122,134,182,0.8)' }}>লোড হচ্ছে...</td></tr>
                   ) : recentArticles.length === 0 ? (
                     <tr><td colSpan={4} className="px-6 py-12 text-center" style={{ color: 'rgba(122,134,182,0.8)' }}>কোনো ডেটা পাওয়া যায়নি</td></tr>

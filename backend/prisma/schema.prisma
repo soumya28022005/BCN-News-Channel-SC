@@ -180,7 +180,7 @@ model Article {
   shareCount   Int    @default(0)
   readingTime  Int?
 
-  language String  @default("en")
+  language String  @default("bn")
   location String?
   source   String?
 
@@ -520,3 +520,32 @@ model Sponsor {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// backend/prisma/schema.prisma
+
+enum AdPlacement {
+  TOP
+  BOTTOM
+  SIDEBAR
+  IN_CONTENT
+}
+
+model Advertisement {
+  id          String      @id @default(cuid())
+  title       String?
+  description String?
+  imageUrl    String
+  linkUrl     String?
+  placement   AdPlacement @default(SIDEBAR)
+  isActive    Boolean     @default(true)
+  weight      Int         @default(1) // Higher weight = more frequent appearance
+  impressions Int         @default(0)
+  clicks      Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([placement, isActive])
+  @@map("advertisements")
+}
+
+// this is backend>prisma>schema.prishma

@@ -2,8 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-// Update path to your authStore if necessary
-import { useAuthStore } from '../../../../store/authStore';
+import { useAuthStore } from '../../../../store/auth.store';
 import { api } from '../../../../lib/api';
 import ArticleEditor from '../../../../components/admin/ArticleEditor';
 
@@ -16,7 +15,7 @@ export default function CreateArticlePage() {
   const [form, setForm] = useState({
     title: '', excerpt: '', content: '', categoryId: '',
     isBreaking: false, isFeatured: false,
-    source: '', // 🔹 CHANGE 1: Added source to initial state
+    source: '', 
   });
   
   const [thumbnail, setThumbnail] = useState<File | null>(null);
@@ -28,7 +27,6 @@ export default function CreateArticlePage() {
   useEffect(() => { 
     loadFromStorage(); 
     
-    // Check if there is an unsaved draft in local storage
     const savedDraft = localStorage.getItem('bcn_auto_draft');
     if (savedDraft) {
       try {
@@ -41,7 +39,6 @@ export default function CreateArticlePage() {
 
   // 🔹 2. AUTO-SAVE DRAFT AS YOU TYPE 🔹
   useEffect(() => {
-    // Save to local storage every time the form changes
     if (form.title || form.content || form.excerpt || form.source) {
       localStorage.setItem('bcn_auto_draft', JSON.stringify(form));
     }
@@ -50,7 +47,6 @@ export default function CreateArticlePage() {
   // 🔹 3. 5-MINUTE INACTIVITY AUTO-LOGOUT 🔹
   useEffect(() => {
     if (!isAuthenticated) { 
-      // If not authenticated, kick to secret URL
       router.push('/api/v1/auth/s/o/n/a/m/o/u/l/i/u/m/y/a'); 
       return; 
     }
@@ -61,17 +57,15 @@ export default function CreateArticlePage() {
 
     const resetTimer = () => {
       clearTimeout(timeoutId);
-      // 300,000 ms = exactly 5 minutes of doing absolutely nothing
       timeoutId = setTimeout(() => {
-        logout(); // Automatically logs out and routes back to secret URL
+        logout(); 
       }, 300000);
     };
 
-    // If the user types, clicks, or moves the mouse, the 5 min timer restarts
     const events = ['mousemove', 'keydown', 'mousedown', 'scroll', 'touchstart'];
     events.forEach(event => window.addEventListener(event, resetTimer));
     
-    resetTimer(); // Start the timer
+    resetTimer(); 
 
     return () => {
       clearTimeout(timeoutId);
@@ -122,7 +116,6 @@ export default function CreateArticlePage() {
       const articleData: any = {
         ...form,
         status: finalStatus,
-        // authorId always from the logged-in user (server also overrides from JWT)
         authorId: currentUser?.id || currentUser?._id,
         ...(thumbnailUrl && { thumbnail: thumbnailUrl }),
       };
@@ -138,7 +131,6 @@ export default function CreateArticlePage() {
           }
         }
 
-        // 🔹 SUCCESS: Clear the local storage draft because it's safely saved to DB
         localStorage.removeItem('bcn_auto_draft');
 
         const messages: Record<string, string> = {
@@ -148,7 +140,7 @@ export default function CreateArticlePage() {
         };
         setSuccess(messages[finalStatus]);
 
-        setTimeout(() => router.push('/newsroom-bcn-2024/articles'), 1800);
+        setTimeout(() => router.back(), 1800); // 🔹 FIX: Redirect using history back after success
       } else {
         setError(res.message || 'সংবাদ তৈরি করা যায়নি');
       }
@@ -167,6 +159,7 @@ export default function CreateArticlePage() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0F]">
+      {/* 🔹 FIX: Standardized Sticky Header matching Settings/Dashboard */}
       <header className="bg-[#111118] border-b border-[#1E1E2E] px-6 py-4 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -175,16 +168,16 @@ export default function CreateArticlePage() {
             </Link>
             <div>
               <h1 className="text-white font-bold text-sm">নতুন সংবাদ</h1>
-              <Link href="/newsroom-bcn-2024/articles" className="text-[#64748B] text-xs hover:text-[#E53E3E]">
-                ← সব সংবাদ
-              </Link>
+              {/* 🔹 FIX: Real Back logic instead of hardcoded Link */}
+              <span onClick={() => router.back()} className="text-[#64748B] text-xs hover:text-[#E53E3E] cursor-pointer select-none transition-colors">
+                ← ফিরে যান
+              </span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             {isReporter && (
               <>
-                {/* DRAFT: শুধু reporter নিজে দেখবে */}
                 <button
                   onClick={() => handleSubmit('DRAFT')}
                   disabled={loading}
@@ -192,8 +185,6 @@ export default function CreateArticlePage() {
                 >
                   {loading ? '...' : '💾 ড্রাফট সংরক্ষণ'}
                 </button>
-
-                {/* REVIEW: সম্পাদকের কাছে পাঠানো */}
                 <button
                   onClick={() => handleSubmit('REVIEW')}
                   disabled={loading}
@@ -204,10 +195,8 @@ export default function CreateArticlePage() {
               </>
             )}
 
-            {/* ── Admin / Editor buttons ───────────────────────────────── */}
             {!isReporter && (
               <>
-                {/* Save as DRAFT */}
                 <button
                   onClick={() => handleSubmit('DRAFT')}
                   disabled={loading}
@@ -215,12 +204,10 @@ export default function CreateArticlePage() {
                 >
                   {loading ? '...' : '💾 ড্রাফট সংরক্ষণ'}
                 </button>
-
-                {/* Publish directly */}
                 <button
                   onClick={() => handleSubmit('PUBLISHED')}
                   disabled={loading}
-                  className="bg-[#E53E3E] text-white px-4 py-2 rounded text-sm hover:bg-red-700 transition-colors disabled:opacity-50"
+                  className="bg-[#E53E3E] text-white px-4 py-2 rounded text-sm hover:bg-red-700 transition-colors disabled:opacity-50 font-bold"
                 >
                   {loading ? 'হচ্ছে...' : '🚀 প্রকাশ করুন'}
                 </button>
@@ -230,21 +217,21 @@ export default function CreateArticlePage() {
         </div>
       </header>
 
+      {/* 🔹 Container width aligned to max-w-5xl */}
       <div className="max-w-5xl mx-auto px-6 py-8">
         {error && (
-          <div className="bg-[#E53E3E]/10 border border-[#E53E3E]/30 text-[#E53E3E] text-sm px-4 py-3 rounded mb-6">
+          <div className="bg-[#E53E3E]/10 border border-[#E53E3E]/30 text-[#E53E3E] text-sm px-4 py-3 rounded-lg mb-6 shadow-sm">
             {error}
           </div>
         )}
         {success && (
-          <div className="bg-[#16A34A]/10 border border-[#16A34A]/30 text-[#16A34A] text-sm px-4 py-3 rounded mb-6">
+          <div className="bg-[#16A34A]/10 border border-[#16A34A]/30 text-[#16A34A] text-sm px-4 py-3 rounded-lg mb-6 shadow-sm">
             {success}
           </div>
         )}
 
-        {/* Reporter info banner */}
         {isReporter && (
-          <div className="bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs px-4 py-3 rounded mb-6 flex items-center gap-2">
+          <div className="bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs px-4 py-3 rounded-lg mb-6 flex items-center gap-2">
             <span>ℹ️</span>
             <span>
               <strong>ড্রাফট সংরক্ষণ</strong> — শুধু আপনি দেখতে পাবেন।&nbsp;&nbsp;
@@ -254,64 +241,60 @@ export default function CreateArticlePage() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main content */}
           <div className="lg:col-span-2 space-y-5">
-            <div>
-              <label className="text-[#64748B] text-xs uppercase tracking-wider block mb-2">শিরোনাম *</label>
+            <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-5">
+              <label className="text-[#64748B] text-xs uppercase tracking-wider block mb-2 font-bold">শিরোনাম *</label>
               <input
                 type="text"
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
                 placeholder="সংবাদের শিরোনাম লিখুন..."
-                className="w-full bg-[#111118] text-[#E2E8F0] placeholder-[#64748B] border border-[#1E1E2E] rounded px-4 py-3 text-base focus:outline-none focus:border-[#E53E3E] transition-colors"
+                className="w-full bg-[#0A0A0F] text-[#E2E8F0] placeholder-[#64748B] border border-[#1E1E2E] rounded px-4 py-3 text-base focus:outline-none focus:border-[#E53E3E] transition-all"
               />
             </div>
-            <div>
-              <label className="text-[#64748B] text-xs uppercase tracking-wider block mb-2">সংক্ষিপ্ত বিবরণ</label>
+            <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-5">
+              <label className="text-[#64748B] text-xs uppercase tracking-wider block mb-2 font-bold">সংক্ষিপ্ত বিবরণ</label>
               <textarea
                 value={form.excerpt}
                 onChange={(e) => setForm({ ...form, excerpt: e.target.value })}
                 placeholder="সংক্ষিপ্ত বিবরণ লিখুন..."
                 rows={3}
-                className="w-full bg-[#111118] text-[#E2E8F0] placeholder-[#64748B] border border-[#1E1E2E] rounded px-4 py-3 text-sm focus:outline-none focus:border-[#E53E3E] transition-colors resize-none"
+                className="w-full bg-[#0A0A0F] text-[#E2E8F0] placeholder-[#64748B] border border-[#1E1E2E] rounded px-4 py-3 text-sm focus:outline-none focus:border-[#E53E3E] transition-all resize-none"
               />
             </div>
-            <div>
+            <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-5">
               <ArticleEditor value={form.content} onChange={(val) => setForm({ ...form, content: val })} />
             </div>
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-5">
-            {/* Thumbnail */}
-            <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-4">
-              <label className="text-[#64748B] text-xs uppercase tracking-wider block mb-3">থাম্বনেইল</label>
+            <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-5">
+              <label className="text-[#64748B] text-xs uppercase tracking-wider block mb-3 font-bold">থাম্বনেইল</label>
               {thumbnailPreview ? (
                 <div className="relative">
-                  <img src={thumbnailPreview} alt="preview" className="w-full h-40 object-cover rounded" />
+                  <img src={thumbnailPreview} alt="preview" className="w-full h-40 object-cover rounded border border-[#2E2E3E]" />
                   <button
                     onClick={() => { setThumbnail(null); setThumbnailPreview(''); }}
-                    className="absolute top-2 right-2 bg-[#E53E3E] text-white w-6 h-6 rounded-full text-xs flex items-center justify-center"
+                    className="absolute top-2 right-2 bg-[#E53E3E] text-white w-7 h-7 rounded-full text-xs flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
                   >
                     ✕
                   </button>
                 </div>
               ) : (
-                <label className="block border-2 border-dashed border-[#1E1E2E] rounded-lg p-6 text-center cursor-pointer hover:border-[#E53E3E] transition-colors">
-                  <div className="text-[#64748B] text-sm">ছবি আপলোড করুন</div>
+                <label className="block border-2 border-dashed border-[#2E2E3E] bg-[#0A0A0F] rounded-lg p-6 text-center cursor-pointer hover:border-[#E53E3E] transition-colors">
+                  <div className="text-[#64748B] text-sm font-medium">ছবি আপলোড করুন</div>
                   <div className="text-[#64748B] text-xs mt-1">JPG, PNG, WEBP</div>
                   <input type="file" accept="image/*" onChange={handleThumbnail} className="hidden" />
                 </label>
               )}
             </div>
 
-            {/* Category */}
-            <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-4">
-              <label className="text-[#64748B] text-xs uppercase tracking-wider block mb-3">বিভাগ *</label>
+            <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-5">
+              <label className="text-[#64748B] text-xs uppercase tracking-wider block mb-3 font-bold">বিভাগ *</label>
               <select
                 value={form.categoryId}
                 onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-                className="w-full bg-[#1E1E2E] text-[#E2E8F0] border border-[#2E2E3E] rounded px-3 py-2.5 text-sm focus:outline-none focus:border-[#E53E3E] transition-colors"
+                className="w-full bg-[#0A0A0F] text-[#E2E8F0] border border-[#1E1E2E] rounded px-3 py-3 text-sm focus:outline-none focus:border-[#E53E3E] transition-all cursor-pointer"
               >
                 <option value="">বিভাগ বেছে নিন</option>
                 {categories.map((cat: any) => (
@@ -320,39 +303,37 @@ export default function CreateArticlePage() {
               </select>
             </div>
 
-            {/* 🔹 CHANGE 2: Added Source / Reference Link Input Field 🔹 */}
-            <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-4">
+            <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-5">
               <label className="text-[#64748B] text-xs uppercase block mb-3 font-bold tracking-wider">সোর্স / বিস্তারিত লিঙ্ক</label>
               <input 
                 type="url" 
                 value={form.source} 
                 onChange={(e) => setForm({ ...form, source: e.target.value })} 
                 placeholder="https://example.com" 
-                className="w-full bg-[#1E1E2E] text-[#E2E8F0] border border-[#2E2E3E] rounded px-3 py-2 text-sm outline-none focus:border-[#E53E3E] transition-colors" 
+                className="w-full bg-[#0A0A0F] text-[#E2E8F0] border border-[#1E1E2E] rounded px-3 py-3 text-sm outline-none focus:border-[#E53E3E] transition-all" 
               />
-              <p className="text-[10px] text-[#64748B] mt-2 italic">এখানে লিঙ্ক দিলে আর্টিকেলের শেষে "Read More" বাটন আসবে।</p>
+              <p className="text-[10px] text-[#64748B] mt-3 italic">এখানে লিঙ্ক দিলে আর্টিকেলের শেষে "Read More" বাটন আসবে।</p>
             </div>
 
-            {/* Breaking / Featured — Admin/Editor only */}
             {!isReporter && (
-              <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-4 space-y-3">
-                <label className="text-[#64748B] text-xs uppercase tracking-wider block">অপশন</label>
+              <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-5 space-y-4">
+                <label className="text-[#64748B] text-xs uppercase tracking-wider block font-bold">বিশেষ অপশন</label>
                 {[
                   { label: '🔴 ব্রেকিং নিউজ', key: 'isBreaking' },
-                  { label: '⭐ ফিচার্ড',       key: 'isFeatured' },
+                  { label: '⭐ ফিচার্ড নিউজ',  key: 'isFeatured' },
                 ].map((opt) => (
-                  <label key={opt.key} className="flex items-center gap-3 cursor-pointer">
+                  <label key={opt.key} className="flex items-center gap-3 cursor-pointer group">
                     <div
                       onClick={() => setForm({ ...form, [opt.key]: !form[opt.key as keyof typeof form] })}
-                      className={`w-10 h-5 rounded-full transition-colors ${
-                        form[opt.key as keyof typeof form] ? 'bg-[#E53E3E]' : 'bg-[#1E1E2E]'
+                      className={`w-11 h-6 rounded-full transition-colors relative ${
+                        form[opt.key as keyof typeof form] ? 'bg-[#E53E3E]' : 'bg-[#2E2E3E]'
                       }`}
                     >
-                      <div className={`w-4 h-4 bg-white rounded-full mt-0.5 transition-transform ${
-                        form[opt.key as keyof typeof form] ? 'translate-x-5' : 'translate-x-0.5'
+                      <div className={`w-5 h-5 bg-white rounded-full mt-0.5 absolute transition-transform ${
+                        form[opt.key as keyof typeof form] ? 'translate-x-5.5 left-0.5' : 'translate-x-0.5'
                       }`} />
                     </div>
-                    <span className="text-[#E2E8F0] text-sm">{opt.label}</span>
+                    <span className="text-[#E2E8F0] text-sm font-medium group-hover:text-white transition-colors">{opt.label}</span>
                   </label>
                 ))}
               </div>

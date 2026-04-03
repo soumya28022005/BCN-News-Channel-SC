@@ -37,6 +37,7 @@ export const createCategory = asyncHandler(async (req: Request, res: Response) =
   const category = await categoryService.create(req.body);
 
   await cacheService.invalidatePattern('categories:*');
+  await cacheService.invalidatePattern('category:*');
 
   res.status(201).json({
     success: true,
@@ -51,6 +52,7 @@ export const updateCategory = asyncHandler(async (req: Request, res: Response) =
   const category = await categoryService.update(idStr, req.body);
 
   await cacheService.invalidatePattern('categories:*');
+  await cacheService.invalidatePattern('category:*');
   await cacheService.del(`category:${category.slug}`);
 
   res.json({
@@ -66,9 +68,12 @@ export const deleteCategory = asyncHandler(async (req: Request, res: Response) =
   await categoryService.delete(categoryId);
 
   await cacheService.invalidatePattern('categories:*');
+  await cacheService.invalidatePattern('category:*');
 
   res.json({
     success: true,
     message: 'Category deleted successfully',
   });
 });
+
+//this is backend/src/controllers/category.controller.ts

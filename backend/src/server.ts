@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 import { createServer } from 'http';
 
 import { config } from './config/env';
@@ -28,43 +29,46 @@ import searchRoutes from './routes/search.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import newsletterRoutes from './routes/newsletter.routes';
 import sitemapRoutes from './routes/sitemap.routes';
-import sponsorRoutes from './routes/sponsor.routes'
+import sponsorRoutes from './routes/sponsor.routes';
+import settingsRoutes from './routes/settings.routes';
 
 const app = express();
 const httpServer = createServer(app);
 
-// ─── Security Middleware ───────────────────────────────────────────
-app.use(helmet({
-  contentSecurityPolicy: false,
-  crossOriginEmbedderPolicy: false,
-}));
+app.set('trust proxy', 1);
 
-app.use(cors({
-  origin: config.CORS_ORIGINS,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-}));
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  })
+);
 
-// ─── Performance Middleware ────────────────────────────────────────
-app.use(compression());
+app.use(
+  cors({
+    origin: config.CORS_ORIGINS,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  })
+);
 
-// ─── Body Parsing ──────────────────────────────────────────────────
+app.use(compression() as any);
+app.use(cookieParser() as any);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// ─── Logging ───────────────────────────────────────────────────────
 if (config.NODE_ENV !== 'test') {
-  app.use(morgan('combined', {
-    stream: { write: (msg: string) => logger.info(msg.trim()) },
-  }));
+  app.use(
+    morgan('combined', {
+      stream: { write: (msg: string) => logger.info(msg.trim()) },
+    })
+  );
 }
 app.use(requestLogger);
 
-// ─── Rate Limiting ─────────────────────────────────────────────────
 app.use('/api/', rateLimiter);
 
-// ─── Health Check ──────────────────────────────────────────────────
 app.get('/health', (req, res) => {
   res.json({
     status: 'healthy',
@@ -75,7 +79,6 @@ app.get('/health', (req, res) => {
   });
 });
 
-// ─── API Routes ────────────────────────────────────────────────────
 const API = '/api/v1';
 
 app.use(`${API}/auth`, authRoutes);
@@ -91,14 +94,12 @@ app.use(`${API}/search`, searchRoutes);
 app.use(`${API}/analytics`, analyticsRoutes);
 app.use(`${API}/newsletter`, newsletterRoutes);
 app.use(sitemapRoutes);
+app.use(`${API}/sponsor`, sponsorRoutes);
+app.use(`${API}/settings`, settingsRoutes);
 
-app.use('/api/v1/sponsor', sponsorRoutes);
-
-// ─── Error Handling ────────────────────────────────────────────────
 app.use(notFound);
 app.use(errorHandler);
 
-// ─── Server Bootstrap ──────────────────────────────────────────────
 async function bootstrap() {
   try {
     await connectDatabase();
@@ -108,7 +109,7 @@ async function bootstrap() {
       await connectRedis();
       logger.info('✅ Redis connected');
     } catch {
-      logger.warn('⚠️  Redis unavailable, continuing without cache');
+      logger.warn('⚠️ Redis unavailable, continuing without cache');
     }
 
     startJobs();
@@ -126,7 +127,6 @@ async function bootstrap() {
 
 bootstrap();
 
-// ─── Graceful Shutdown ─────────────────────────────────────────────
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received. Shutting down gracefully...');
   httpServer.close(() => {
@@ -144,7 +144,8 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-export default app;// BigInt serialization fix
-(BigInt.prototype as any).toJSON = function() { return this.toString(); };
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
 
-
+export default app;

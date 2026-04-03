@@ -7,10 +7,6 @@ import { api } from '../../../lib/api';
 import { timeAgo } from '../../../lib/utils';
 import { Edit, AlertCircle, CheckCircle, ExternalLink, Clock } from 'lucide-react';
 
-// ─── Status badge config ────────────────────────────────────────────────────
-// Maps every ArticleStatus value to a Bengali label + Tailwind colour classes.
-// REVIEW = "সম্পাদকের অপেক্ষায়" — this is the state reporters land in after
-// clicking "Send to Editor".
 const STATUS_CONFIG: Record<string, { label: string; classes: string }> = {
   PUBLISHED: { label: 'প্রকাশিত',              classes: 'bg-green-500/10 text-green-400' },
   DRAFT:     { label: 'ড্রাফট',                classes: 'bg-yellow-500/10 text-yellow-400' },
@@ -26,24 +22,21 @@ export default function AdminArticlesPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('ALL');
 
-  useEffect(() => { loadFromStorage(); }, []);
+  useEffect(() => { loadFromStorage(); }, [loadFromStorage]);
 
   useEffect(() => {
     if (!isAuthenticated) { router.push('/auth/login'); return; }
     if (user) fetchArticles();
-  }, [isAuthenticated, filter, user]);
+  }, [isAuthenticated, filter, user, router]);
 
   const fetchArticles = async () => {
     if (!user) return;
     setLoading(true);
     try {
       const currentUser = user as any;
-      // Prisma Role enum: SUPER_ADMIN | ADMIN | JOURNALIST | EDITOR | USER
       const isReporter   = currentUser?.role === 'JOURNALIST';
       const currentUserId = currentUser?.id || currentUser?._id;
 
-      // When filter is ALL we send no status param → backend returns all statuses.
-      // This is key: a reporter clicking "সব" must see their REVIEW articles.
       const statusQuery = filter === 'ALL' ? '' : `&status=${filter}`;
       const authorQuery = isReporter ? `&authorId=${currentUserId}` : '';
       const timestamp   = new Date().getTime();
@@ -53,8 +46,6 @@ export default function AdminArticlesPage() {
       );
       let fetchedArticles = response.data || [];
 
-      // Defensive client-side filter: even if backend sends extra rows,
-      // reporters never see other people's work.
       if (isReporter) {
         fetchedArticles = fetchedArticles.filter((article: any) =>
           String(article.author?.id) === String(currentUserId)
@@ -91,9 +82,6 @@ export default function AdminArticlesPage() {
   const currentUserId  = currentUser?.id || currentUser?._id;
   const isAdminOrEditor = ['ADMIN', 'SUPER_ADMIN', 'EDITOR'].includes(currentUser?.role || '');
 
-  // Tabs shown depend on role.
-  // Reporters only care about ALL / REVIEW (their pending) / PUBLISHED.
-  // Admins see DRAFT too.
   const tabs = isAdminOrEditor
     ? [
         { label: 'সব',                value: 'ALL' },
@@ -110,39 +98,46 @@ export default function AdminArticlesPage() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0F]">
-      <header className="bg-[#111118] border-b border-[#1E1E2E] px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+      {/* 🔹 FIX: Standardized Sticky Header to match Create/Edit/Settings pages */}
+      <header className="bg-[#111118] border-b border-[#1E1E2E] px-6 py-4 sticky top-0 z-10">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/admin" className="w-9 h-9 bg-[#E53E3E] flex items-center justify-center font-bold text-white text-sm rounded-sm">
+            {/* 🔹 FIX: Logo points to the correct dashboard */}
+            <Link href="/newsroom-bcn-2024" className="w-9 h-9 bg-[#E53E3E] flex items-center justify-center font-bold text-white text-sm rounded-sm">
               BCN
             </Link>
             <div>
               <h1 className="text-white font-bold text-sm">
                 সব সংবাদ <span className="text-[#64748B] font-normal">({currentUser?.role})</span>
               </h1>
-              <Link href="/admin" className="text-[#64748B] text-xs hover:text-[#E53E3E]">← Dashboard</Link>
+              {/* 🔹 FIX: Dynamic history back logic */}
+              <span onClick={() => router.back()} className="text-[#64748B] text-xs hover:text-[#E53E3E] cursor-pointer select-none transition-colors">
+                ← ফিরে যান
+              </span>
             </div>
           </div>
+          {/* 🔹 FIX: Corrected the path to Create Article */}
           <Link
-            href="/admin/articles/create"
-            className="bg-[#E53E3E] text-white px-4 py-2 rounded text-sm hover:bg-red-700 transition-colors"
+            href="/newsroom-bcn-2024/articles/create"
+            className="bg-[#E53E3E] text-white px-4 py-2 rounded text-sm hover:bg-red-700 transition-colors shadow-lg hover:shadow-red-500/20"
           >
             + নতুন সংবাদ
           </Link>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      {/* 🔹 FIX: Changed max-w-7xl to max-w-5xl to match UI consistency */}
+      <div className="max-w-5xl mx-auto px-6 py-8">
         {/* Filter tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
           {tabs.map((tab) => (
             <button
               key={tab.value}
               onClick={() => setFilter(tab.value)}
-              className={`px-4 py-2 rounded text-sm whitespace-nowrap transition-colors ${
+              className={`px-5 py-2.5 rounded-lg text-sm whitespace-nowrap transition-all font-medium ${
                 filter === tab.value
-                  ? 'bg-[#E53E3E] text-white'
-                  : 'bg-[#111118] text-[#64748B] border border-[#1E1E2E] hover:border-[#E53E3E]'
+                  ? 'bg-[#E53E3E] text-white shadow-lg shadow-red-500/20'
+                  : 'bg-[#111118] text-[#64748B] border border-[#1E1E2E] hover:border-[#E53E3E] hover:text-[#E2E8F0]'
               }`}
             >
               {tab.label}
@@ -150,43 +145,29 @@ export default function AdminArticlesPage() {
           ))}
         </div>
 
-        <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg overflow-hidden shadow-xl">
+        <div className="bg-[#111118] border border-[#1E1E2E] rounded-xl overflow-hidden shadow-2xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left min-w-[600px]">
-              <thead className="bg-[#0A0A0F] border-b border-[#1E1E2E] text-[#64748B] text-xs uppercase">
+              <thead className="bg-[#0A0A0F] border-b border-[#1E1E2E] text-[#64748B] text-xs uppercase tracking-wider">
                 <tr>
-                  <th className="px-6 py-4 font-semibold">শিরোনাম</th>
-                  <th className="px-6 py-4 font-semibold text-center">স্ট্যাটাস</th>
-                  <th className="px-6 py-4 font-semibold text-right">অ্যাকশন</th>
+                  <th className="px-6 py-4 font-bold">শিরোনাম</th>
+                  <th className="px-6 py-4 font-bold text-center">স্ট্যাটাস</th>
+                  <th className="px-6 py-4 font-bold text-right">অ্যাকশন</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1E1E2E]">
                 {loading ? (
                   <tr>
-                    <td colSpan={3} className="px-6 py-12 text-center text-[#64748B]">লোড হচ্ছে...</td>
+                    <td colSpan={3} className="px-6 py-12 text-center text-[#64748B] font-medium">লোড হচ্ছে...</td>
                   </tr>
                 ) : articles.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="px-6 py-12 text-center text-[#64748B]">কোনো সংবাদ নেই</td>
+                    <td colSpan={3} className="px-6 py-12 text-center text-[#64748B] font-medium">কোনো সংবাদ নেই</td>
                   </tr>
                 ) : (
                   articles.map((article: any) => {
                     const isAuthor = String(article.author?.id) === String(currentUserId);
-
-                    /**
-                     * Permission rules:
-                     * - Admin/Editor → can always edit & delete any article
-                     * - Reporter (JOURNALIST) → can edit & delete their OWN articles
-                     *   at ANY status (REVIEW, PUBLISHED, DRAFT).
-                     *   They cannot publish — only Admin/Editor can do that.
-                     */
                     const canEditOrDelete = isAdminOrEditor || isAuthor;
-
-                    /**
-                     * Publish button:
-                     * - Only Admin/Editor see it
-                     * - Only shown when status is NOT already PUBLISHED
-                     */
                     const canPublish = isAdminOrEditor && article.status !== 'PUBLISHED';
 
                     const statusCfg = STATUS_CONFIG[article.status] ?? {
@@ -195,68 +176,62 @@ export default function AdminArticlesPage() {
                     };
 
                     return (
-                      <tr key={article.id} className="hover:bg-[#1E1E2E]/30 transition-colors group">
-                        {/* Title + meta */}
+                      <tr key={article.id} className="hover:bg-[#1E1E2E]/40 transition-colors group">
                         <td className="px-6 py-4">
-                          <h4 className="text-sm text-[#E2E8F0] font-medium max-w-md truncate">
+                          <h4 className="text-sm text-[#E2E8F0] font-bold max-w-md truncate group-hover:text-white transition-colors">
                             {article.title}
                           </h4>
-                          <p className="text-[11px] text-[#64748B] mt-1">
-                            {article.author?.name || 'Unknown'} •{' '}
+                          <p className="text-[11px] text-[#64748B] mt-1.5 font-medium">
+                            <span className="text-[#94A3B8]">{article.author?.name || 'Unknown'}</span> •{' '}
                             {article.category?.name || 'Uncategorized'} •{' '}
                             {timeAgo(article.createdAt)}
                           </p>
                         </td>
 
-                        {/* Status badge */}
                         <td className="px-6 py-4 text-center">
-                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold uppercase ${statusCfg.classes}`}>
-                            {article.status === 'REVIEW' && <Clock size={10} />}
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${statusCfg.classes}`}>
+                            {article.status === 'REVIEW' && <Clock size={12} />}
                             {statusCfg.label}
                           </span>
                         </td>
 
-                        {/* Action buttons */}
                         <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            {/* Publish — Admin/Editor only, for non-published articles */}
+                          <div className="flex items-center justify-end gap-3">
                             {canPublish && (
                               <button
                                 onClick={() => handlePublish(article.id)}
-                                className="p-1.5 text-green-500 hover:bg-green-500/10 rounded"
+                                className="p-2 text-green-500 bg-green-500/5 hover:bg-green-500/20 rounded-lg transition-colors"
                                 title="প্রকাশ করুন"
                               >
                                 <CheckCircle size={16} />
                               </button>
                             )}
 
-                            {/* View live — only makes sense when published */}
                             {article.status === 'PUBLISHED' && (
                               <Link
                                 href={`/news/${article.slug}`}
-                                className="p-1.5 text-blue-500 hover:bg-blue-500/10 rounded"
+                                className="p-2 text-blue-500 bg-blue-500/5 hover:bg-blue-500/20 rounded-lg transition-colors"
                                 title="দেখুন"
                               >
                                 <ExternalLink size={16} />
                               </Link>
                             )}
 
-                            {/* Edit */}
                             {canEditOrDelete && (
                               <Link
-                                href={`/admin/articles/edit/${article.id}`}
-                                className="p-1.5 text-indigo-400 hover:bg-indigo-400/10 rounded"
+                                /* 🔹 FIX: Corrected path for Edit Article */
+                                href={`/newsroom-bcn-2024/articles/edit/${article.id}`}
+                                className="p-2 text-indigo-400 bg-indigo-400/5 hover:bg-indigo-400/20 rounded-lg transition-colors"
                                 title="সম্পাদনা"
                               >
                                 <Edit size={16} />
                               </Link>
                             )}
 
-                            {/* Delete */}
                             {canEditOrDelete && (
                               <button
                                 onClick={() => handleDelete(article.id)}
-                                className="p-1.5 text-red-500 hover:bg-red-500/10 rounded"
+                                className="p-2 text-red-500 bg-red-500/5 hover:bg-red-500/20 rounded-lg transition-colors"
                                 title="মুছুন"
                               >
                                 <AlertCircle size={16} />

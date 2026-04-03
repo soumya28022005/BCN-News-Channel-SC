@@ -1,4 +1,0 @@
-import { redirect } from 'next/navigation';
-export default function AdminPage() {
-  redirect('/newsroom-bcn-2024');
-}

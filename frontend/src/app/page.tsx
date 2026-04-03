@@ -1,50 +1,47 @@
-import Header from '../components/layout/Header';
-import Footer from '../components/layout/Footer';
-import SharedNewsLayout from '../components/news/SharedNewsLayout';
-import SponsorPopup from '../components/news/SponsorPopup'; 
-
-// Import the new Ad Components
-import TopBannerAd from '../components/ads/TopBannerAd';
-import BottomStickyAd from '../components/ads/BottomStickyAd';
-
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+import Header from '@/components/layout/Header';
+// 🔹 নতুন কম্পোনেন্ট ইম্পোর্ট করা হলো
+import MobileTicker from '@/components/layout/Header/MobileTicker'; 
+import SharedNewsLayout from '@/components/news/SharedNewsLayout';
+import { apiUrl } from '@/lib/config';
 
 async function getArticles() {
-  try {
-    const res = await fetch(`${API}/articles?status=PUBLISHED&limit=20`, { next: { revalidate: 60 } });
-    return (await res.json()).data || [];
-  } catch { return []; }
+  const res = await fetch(apiUrl('/articles'), { next: { revalidate: 30 } });
+  if (!res.ok) return { data: [], pagination: {} };
+  return res.json();
 }
+
 async function getBreaking() {
-  try {
-    const res = await fetch(`${API}/articles/breaking`, { next: { revalidate: 30 } });
-    return (await res.json()).data || [];
-  } catch { return []; }
+  const res = await fetch(apiUrl('/articles/breaking'), { next: { revalidate: 60 } });
+  if (!res.ok) return { data: [], pagination: {} };
+  return res.json();
 }
+
 async function getTrending() {
-  try {
-    const res = await fetch(`${API}/articles/trending`, { next: { revalidate: 120 } });
-    return (await res.json()).data || [];
-  } catch { return []; }
+  const res = await fetch(apiUrl('/articles/trending'), { next: { revalidate: 120 } });
+  if (!res.ok) return { data: [], pagination: {} };
+  return res.json();
 }
 
 export default async function HomePage() {
-  const [articles, breaking, trending] = await Promise.all([getArticles(), getBreaking(), getTrending()]);
+  const [allRes, breakingRes, trendingRes] = await Promise.all([
+    getArticles(),
+    getBreaking(),
+    getTrending(),
+  ]);
+
+  const articles = allRes.data || [];
+  const breaking = breakingRes.data || [];
+  const trending = trendingRes.data || [];
 
   return (
-    <>
-      <SponsorPopup /> 
-      <Header />
+    <div className="flex min-h-screen flex-col" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
       
-      {/* 🟢 Top Banner Ad - Responsive & Above Main Content */}
-      <TopBannerAd />
+      {/* 🔹 মোবাইলের জন্য ফ্ল্যাশ নিউজ Ticker হেডারের ঠিক নিচে, হিরো সেকশনের উপরে দেওয়া হলো */}
+      <MobileTicker />
 
-      <SharedNewsLayout articles={articles} breaking={breaking} trending={trending} />
-      
-      {/* 🟢 Mobile Only Bottom Sticky Ad */}
-      <BottomStickyAd />
-
-      <Footer />
-    </>
+      <main className="flex-1">
+        <SharedNewsLayout articles={articles} breaking={breaking} trending={trending} />
+      </main>
+    </div>
   );
 }

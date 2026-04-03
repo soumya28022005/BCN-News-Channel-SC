@@ -1,14 +1,8 @@
-/**
- * BCN – Auth Service
- * JWT authentication with refresh tokens
- */
-
 import { prisma } from '../config/database';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { config } from '../config/env';
 import { AppError } from '../utils/AppError';
-
 
 interface TokenPayload {
   id: string;
@@ -17,15 +11,12 @@ interface TokenPayload {
 }
 
 export class AuthService {
-
-  // ─── REGISTER ──────────────────────────────────────────────────────
   async register(data: {
     name: string;
     email: string;
     username: string;
     password: string;
   }) {
-    // Check if email or username exists
     const existing = await prisma.user.findFirst({
       where: {
         OR: [{ email: data.email }, { username: data.username }],
@@ -59,7 +50,6 @@ export class AuthService {
 
     const tokens = this.generateTokens({ id: user.id, role: user.role, email: user.email });
 
-    // Store refresh token
     await prisma.user.update({
       where: { id: user.id },
       data: { refreshToken: await bcrypt.hash(tokens.refreshToken, 8) },
@@ -67,8 +57,6 @@ export class AuthService {
 
     return { user, ...tokens };
   }
-
-  // ─── LOGIN ─────────────────────────────────────────────────────────
   async login(email: string, password: string) {
     const user = await prisma.user.findUnique({
       where: { email },
@@ -84,7 +72,7 @@ export class AuthService {
         isVerified: true,
       },
     });
-
+    console.log("your email ad password is ", email, password);
     if (!user) throw new AppError('Invalid credentials', 401);
     if (!user.isActive) throw new AppError('Account has been suspended', 403);
 
@@ -93,7 +81,6 @@ export class AuthService {
 
     const tokens = this.generateTokens({ id: user.id, role: user.role, email: user.email });
 
-    // Update refresh token and last login
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -102,11 +89,10 @@ export class AuthService {
       },
     });
 
-    const { password: _, ...userWithoutPassword } = user;
+    const { password: _password, ...userWithoutPassword } = user;
     return { user: userWithoutPassword, ...tokens };
   }
 
-  // ─── REFRESH TOKEN ─────────────────────────────────────────────────
   async refreshToken(token: string) {
     try {
       const decoded = jwt.verify(token, config.JWT_REFRESH_SECRET) as TokenPayload;
@@ -114,8 +100,11 @@ export class AuthService {
       const user = await prisma.user.findUnique({
         where: { id: decoded.id },
         select: {
-          id: true, role: true, email: true,
-          refreshToken: true, isActive: true,
+          id: true,
+          role: true,
+          email: true,
+          refreshToken: true,
+          isActive: true,
         },
       });
 
@@ -126,7 +115,11 @@ export class AuthService {
       const isValid = await bcrypt.compare(token, user.refreshToken);
       if (!isValid) throw new AppError('Invalid refresh token', 401);
 
-      const tokens = this.generateTokens({ id: user.id, role: user.role, email: user.email });
+      const tokens = this.generateTokens({
+        id: user.id,
+        role: user.role,
+        email: user.email,
+      });
 
       await prisma.user.update({
         where: { id: user.id },
@@ -134,12 +127,11 @@ export class AuthService {
       });
 
       return tokens;
-    } catch (error) {
+    } catch {
       throw new AppError('Invalid or expired refresh token', 401);
     }
   }
 
-  // ─── LOGOUT ────────────────────────────────────────────────────────
   async logout(userId: string) {
     await prisma.user.update({
       where: { id: userId },
@@ -147,7 +139,6 @@ export class AuthService {
     });
   }
 
-  // ─── GENERATE TOKENS ───────────────────────────────────────────────
   generateTokens(payload: TokenPayload) {
     const accessToken = jwt.sign(payload, config.JWT_SECRET, {
       expiresIn: config.JWT_EXPIRES_IN,
@@ -160,7 +151,6 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  // ─── VERIFY TOKEN ──────────────────────────────────────────────────
   verifyAccessToken(token: string): TokenPayload {
     try {
       return jwt.verify(token, config.JWT_SECRET) as TokenPayload;

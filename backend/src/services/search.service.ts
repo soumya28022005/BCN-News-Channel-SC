@@ -1,7 +1,6 @@
 import { ArticleStatus } from '@prisma/client';
 import { prisma } from '../config/database';
 
-
 export class SearchService {
 
   async search(params: {
@@ -15,22 +14,46 @@ export class SearchService {
     const { query, category, tag, page, limit, sort = 'relevance' } = params;
     const skip = (page - 1) * limit;
 
+    // ✅ Clean query
+    const cleanQuery = query.trim();
+
+    // ✅ Empty query protection
+    if (!cleanQuery) {
+      return {
+        data: [],
+        query,
+        pagination: {
+          total: 0,
+          page,
+          limit,
+          totalPages: 0,
+        },
+      };
+    }
+
+    // ✅ WHERE (Bengali + English friendly)
     const where: any = {
       status: ArticleStatus.PUBLISHED,
       OR: [
-        { title: { contains: query, mode: 'insensitive' } },
-        { excerpt: { contains: query, mode: 'insensitive' } },
-        { content: { contains: query, mode: 'insensitive' } },
-        { seoKeywords: { has: query.toLowerCase() } },
+        { title: { contains: cleanQuery, mode: 'insensitive' } },
+        { excerpt: { contains: cleanQuery, mode: 'insensitive' } },
+        { content: { contains: cleanQuery, mode: 'insensitive' } },
+        { seoKeywords: { hasSome: [cleanQuery.toLowerCase()] } },
       ],
       ...(category && { category: { slug: category } }),
       ...(tag && { tags: { some: { tag: { slug: tag } } } }),
     };
 
+    // ✅ Smart ranking
     const orderBy: any =
-      sort === 'latest' ? { publishedAt: 'desc' } :
-      sort === 'popular' ? { viewCount: 'desc' } :
-      { publishedAt: 'desc' };
+      sort === 'latest'
+        ? { publishedAt: 'desc' }
+        : sort === 'popular'
+        ? { viewCount: 'desc' }
+        : [
+            { viewCount: 'desc' },   // 🔥 popularity
+            { publishedAt: 'desc' }, // 🔥 freshness
+          ];
 
     const [articles, total] = await Promise.all([
       prisma.article.findMany({
@@ -71,14 +94,24 @@ export class SearchService {
   }
 
   async getSuggestions(query: string) {
-    if (query.length < 2) return [];
+    const cleanQuery = query.trim();
+
+    // ✅ Prevent empty / small input
+    if (!cleanQuery || cleanQuery.length < 2) return [];
 
     const articles = await prisma.article.findMany({
       where: {
         status: ArticleStatus.PUBLISHED,
-        title: { contains: query, mode: 'insensitive' },
+        OR: [
+          { title: { startsWith: cleanQuery, mode: 'insensitive' } },
+          { title: { contains: cleanQuery, mode: 'insensitive' } },
+        ],
       },
-      select: { title: true, slug: true, category: { select: { name: true } } },
+      select: {
+        title: true,
+        slug: true,
+        category: { select: { name: true } },
+      },
       take: 5,
       orderBy: { viewCount: 'desc' },
     });

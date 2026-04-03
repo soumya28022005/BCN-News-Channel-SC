@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import Header from '../../components/layout/Header';
-import Footer from '../../components/layout/Footer';
+
 import { apiUrl } from '../../lib/config'; // ✅ FIX 1: no more hardcoded localhost
 
 async function getTrending() {
@@ -31,7 +30,7 @@ export default async function TrendingPage() {
 
   return (
     <>
-      <Header />
+     
       <main className="min-h-screen bg-[#0A0A0F]">
         {/* Page Header */}
         <div className="bg-[#111118] border-b border-[#1E1E2E] py-10 px-4">
@@ -118,7 +117,6 @@ export default async function TrendingPage() {
           )}
         </div>
       </main>
-      <Footer />
     </>
   );
 }
