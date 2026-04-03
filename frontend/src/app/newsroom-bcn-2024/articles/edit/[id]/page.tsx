@@ -9,7 +9,8 @@ import ArticleEditor from '../../../../../components/admin/ArticleEditor';
 export default function EditArticlePage() {
   const params = useParams();
   const router = useRouter();
-  const { user, isAuthenticated, loadFromStorage, logout } = useAuthStore();
+  // 🔹 FIX 1: Added isLoading from store to prevent premature kickout
+  const { user, isAuthenticated, isLoading: authLoading, loadFromStorage, logout } = useAuthStore();
   const articleId = params?.id as string;
 
   const [form, setForm] = useState({
@@ -20,7 +21,7 @@ export default function EditArticlePage() {
     isBreaking: false, 
     isFeatured: false, 
     thumbnail: '',
-    source: '', // 🔹 Added source field
+    source: '', 
   });
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,10 +31,13 @@ export default function EditArticlePage() {
 
   useEffect(() => { loadFromStorage(); }, [loadFromStorage]);
 
-  // 🔹 1. SECURE NAVIGATION & 5-MINUTE AUTO-LOGOUT 🔹
+  // 🔹 1. SECURE NAVIGATION & 5-MINUTE AUTO-LOGOUT (BUG FIXED) 🔹
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) { 
+    // Wait for auth check to finish before making decisions
+    if (authLoading) return;
+
+    // 🔹 FIX 2: Removed buggy localStorage check. Now relying completely on Zustand auth state.
+    if (!isAuthenticated) { 
       router.push('/api/v1/auth/s/o/n/a/m/o/u/l/i/u/m/y/a'); 
       return; 
     }
@@ -54,7 +58,7 @@ export default function EditArticlePage() {
       clearTimeout(timeoutId);
       events.forEach(event => window.removeEventListener(event, resetTimer));
     };
-  }, [isAuthenticated, articleId, router, logout]);
+  }, [isAuthenticated, authLoading, articleId, router, logout]);
 
   const fetchData = async () => {
     try {
@@ -72,7 +76,7 @@ export default function EditArticlePage() {
         isBreaking: a.isBreaking || false,
         isFeatured: a.isFeatured || false,
         thumbnail: a.thumbnail || '',
-        source: a.source || '', // 🔹 Populating source link
+        source: a.source || '', 
       });
       setCategories(catRes.data || catRes || []);
     } catch {
@@ -107,7 +111,9 @@ export default function EditArticlePage() {
         UPDATE:    '✅ আপডেট হয়েছে!',
       };
       setMsg(messages[action]);
-      setTimeout(() => router.push('/newsroom-bcn-2024/articles'), 1500);
+      
+      // 🔹 FIX 3: Dynamic routing using back()
+      setTimeout(() => router.back(), 1500);
     } catch {
       setMsg('❌ সেভ করা যায়নি');
     } finally {
@@ -115,36 +121,41 @@ export default function EditArticlePage() {
     }
   };
 
+  if (authLoading) return <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center text-white">অথেন্টিকেশন চেক করা হচ্ছে...</div>;
   if (!isAuthenticated) return null;
-  if (loading) return (
-    <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center text-white">লোড হচ্ছে...</div>
-  );
+  if (loading) return <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center text-white">আর্টিকেল লোড হচ্ছে...</div>;
 
   return (
     <div className="min-h-screen bg-[#0A0A0F]">
+      {/* 🔹 FIX 4: Header Design matched with Dashboard & Create Page */}
       <header className="bg-[#111118] border-b border-[#1E1E2E] px-6 py-4 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/newsroom-bcn-2024" className="w-9 h-9 bg-[#E53E3E] flex items-center justify-center font-bold text-white text-sm rounded-sm">BCN</Link>
+            <Link href="/newsroom-bcn-2024" className="w-9 h-9 bg-[#E53E3E] flex items-center justify-center font-bold text-white text-sm rounded-sm shadow-lg">
+              BCN
+            </Link>
             <div>
               <h1 className="text-white font-bold text-sm">সংবাদ এডিট করুন</h1>
-              <Link href="/newsroom-bcn-2024/articles" className="text-[#64748B] text-xs hover:text-[#E53E3E]">← সব সংবাদ</Link>
+              {/* 🔹 FIX 5: Real Back Logic */}
+              <span onClick={() => router.back()} className="text-[#64748B] text-xs hover:text-[#E53E3E] cursor-pointer select-none transition-colors">
+                ← ফিরে যান
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className={`text-[10px] px-2 py-1 rounded font-bold uppercase mr-2 ${
+          <div className="flex items-center gap-3">
+            <span className={`text-[10px] px-3 py-1.5 rounded-md font-bold uppercase tracking-wider mr-2 ${
               currentStatus === 'PUBLISHED' ? 'bg-green-500/10 text-green-400' : 'bg-yellow-500/10 text-yellow-400'
             }`}>
               {currentStatus === 'PUBLISHED' ? 'প্রকাশিত' : 'ড্রাফট'}
             </span>
 
             {isReporter ? (
-              <button onClick={() => handleSave('REVIEW')} disabled={saving} className="bg-[#E53E3E] text-white px-4 py-2 rounded text-sm disabled:opacity-50">
+              <button onClick={() => handleSave('REVIEW')} disabled={saving} className="bg-[#E53E3E] text-white px-5 py-2 rounded-lg text-sm disabled:opacity-50 hover:bg-red-700 transition-colors shadow-lg shadow-red-500/20">
                 {saving ? '...' : '📤 পাঠান'}
               </button>
             ) : (
-              <button onClick={() => handleSave('UPDATE')} disabled={saving} className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 disabled:opacity-50">
+              <button onClick={() => handleSave('UPDATE')} disabled={saving} className="bg-[#16A34A] text-white px-5 py-2 rounded-lg text-sm hover:bg-green-700 disabled:opacity-50 transition-colors shadow-lg shadow-green-500/20">
                 {saving ? '...' : '✅ আপডেট করুন'}
               </button>
             )}
@@ -152,59 +163,70 @@ export default function EditArticlePage() {
         </div>
       </header>
 
+      {/* 🔹 FIX 6: Container width updated to max-w-5xl */}
       <div className="max-w-5xl mx-auto px-6 py-8">
         {msg && (
-          <div className={`px-4 py-3 rounded text-sm mb-6 ${msg.includes('✅') || msg.includes('🚀') ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+          <div className={`px-4 py-3 rounded-lg text-sm mb-6 shadow-sm ${msg.includes('✅') || msg.includes('🚀') ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
             {msg}
           </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-5">
-            <input value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="w-full bg-[#111118] text-white border border-[#1E1E2E] rounded px-4 py-3 outline-none focus:border-[#E53E3E]" placeholder="শিরোনাম *" />
-            <textarea value={form.excerpt} onChange={e => setForm({...form, excerpt: e.target.value})} rows={3} className="w-full bg-[#111118] text-white border border-[#1E1E2E] rounded px-4 py-3 text-sm resize-none outline-none focus:border-[#E53E3E]" placeholder="সংক্ষিপ্ত বিবরণ..." />
-            <ArticleEditor value={form.content} onChange={(val) => setForm({...form, content: val})} />
+            <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-5">
+              <label className="text-[#64748B] text-xs uppercase tracking-wider block mb-2 font-bold">শিরোনাম *</label>
+              <input value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="w-full bg-[#0A0A0F] text-[#E2E8F0] border border-[#1E1E2E] rounded px-4 py-3 outline-none focus:border-[#E53E3E] transition-all" placeholder="সংবাদের শিরোনাম..." />
+            </div>
+            
+            <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-5">
+              <label className="text-[#64748B] text-xs uppercase tracking-wider block mb-2 font-bold">সংক্ষিপ্ত বিবরণ</label>
+              <textarea value={form.excerpt} onChange={e => setForm({...form, excerpt: e.target.value})} rows={3} className="w-full bg-[#0A0A0F] text-[#E2E8F0] border border-[#1E1E2E] rounded px-4 py-3 text-sm resize-none outline-none focus:border-[#E53E3E] transition-all" placeholder="সংক্ষিপ্ত বিবরণ..." />
+            </div>
+
+            <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-5">
+               <ArticleEditor value={form.content} onChange={(val) => setForm({...form, content: val})} />
+            </div>
           </div>
 
           <div className="space-y-5">
-            <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-4">
-              <label className="text-[#64748B] text-xs uppercase block mb-3 font-bold">থাম্বনেইল URL</label>
-              <input value={form.thumbnail} onChange={e => setForm({...form, thumbnail: e.target.value})} className="w-full bg-[#1E1E2E] text-white border border-[#2E2E3E] rounded px-3 py-2 text-sm outline-none focus:border-[#E53E3E]" />
-              {form.thumbnail && <img src={form.thumbnail} className="mt-3 w-full h-32 object-cover rounded" />}
+            <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-5">
+              <label className="text-[#64748B] text-xs uppercase block mb-3 font-bold tracking-wider">থাম্বনেইল URL</label>
+              <input value={form.thumbnail} onChange={e => setForm({...form, thumbnail: e.target.value})} placeholder="https://..." className="w-full bg-[#0A0A0F] text-[#E2E8F0] border border-[#1E1E2E] rounded px-3 py-3 text-sm outline-none focus:border-[#E53E3E] transition-all" />
+              {form.thumbnail && <img src={form.thumbnail} className="mt-4 w-full h-32 object-cover rounded border border-[#2E2E3E]" />}
             </div>
 
-            <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-4">
-              <label className="text-[#64748B] text-xs uppercase block mb-3 font-bold">বিভাগ</label>
-              <select value={form.categoryId} onChange={e => setForm({...form, categoryId: e.target.value})} className="w-full bg-[#1E1E2E] text-white border border-[#2E2E3E] rounded px-3 py-2 text-sm outline-none focus:border-[#E53E3E]">
+            <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-5">
+              <label className="text-[#64748B] text-xs uppercase block mb-3 font-bold tracking-wider">বিভাগ</label>
+              <select value={form.categoryId} onChange={e => setForm({...form, categoryId: e.target.value})} className="w-full bg-[#0A0A0F] text-[#E2E8F0] border border-[#1E1E2E] rounded px-3 py-3 text-sm outline-none focus:border-[#E53E3E] transition-all cursor-pointer">
+                <option value="">বিভাগ নির্বাচন করুন</option>
                 {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
 
-            {/* 🔹 SOURCE LINK INPUT 🔹 */}
-            <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-4">
+            <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-5">
               <label className="text-[#64748B] text-xs uppercase block mb-3 font-bold tracking-wider">সোর্স / বিস্তারিত লিঙ্ক</label>
               <input 
                 type="url" 
                 value={form.source} 
                 onChange={(e) => setForm({ ...form, source: e.target.value })} 
                 placeholder="https://..." 
-                className="w-full bg-[#1E1E2E] text-[#E2E8F0] border border-[#2E2E3E] rounded px-3 py-2 text-sm outline-none focus:border-[#E53E3E]" 
+                className="w-full bg-[#0A0A0F] text-[#E2E8F0] border border-[#1E1E2E] rounded px-3 py-3 text-sm outline-none focus:border-[#E53E3E] transition-all" 
               />
-              <p className="text-[10px] text-[#64748B] mt-2 italic">এখানে লিঙ্ক দিলে আর্টিকেলের শেষে "Read More" বাটন আসবে।</p>
+              <p className="text-[10px] text-[#64748B] mt-3 italic">এখানে লিঙ্ক দিলে আর্টিকেলের শেষে "Read More" বাটন আসবে।</p>
             </div>
 
             {isAdminOrEditor && (
-              <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-4 space-y-3">
-                <label className="text-[#64748B] text-xs uppercase tracking-wider block">অপশন</label>
+              <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-5 space-y-4">
+                <label className="text-[#64748B] text-xs uppercase tracking-wider block font-bold">বিশেষ অপশন</label>
                 {[
                   { label: '🔴 ব্রেকিং নিউজ', key: 'isBreaking' },
-                  { label: '⭐ ফিচার্ড', key: 'isFeatured' },
+                  { label: '⭐ ফিচার্ড নিউজ', key: 'isFeatured' },
                 ].map((opt) => (
-                  <label key={opt.key} className="flex items-center gap-3 cursor-pointer">
-                    <div onClick={() => setForm({...form, [opt.key]: !form[opt.key as keyof typeof form]})} className={`w-10 h-5 rounded-full transition-colors ${form[opt.key as keyof typeof form] ? 'bg-[#E53E3E]' : 'bg-[#1E1E2E]'}`}>
-                      <div className={`w-4 h-4 bg-white rounded-full mt-0.5 transition-transform ${form[opt.key as keyof typeof form] ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  <label key={opt.key} className="flex items-center gap-3 cursor-pointer group">
+                    <div onClick={() => setForm({...form, [opt.key]: !form[opt.key as keyof typeof form]})} className={`w-11 h-6 rounded-full transition-colors relative ${form[opt.key as keyof typeof form] ? 'bg-[#E53E3E]' : 'bg-[#2E2E3E]'}`}>
+                      <div className={`w-5 h-5 bg-white rounded-full mt-0.5 absolute transition-transform ${form[opt.key as keyof typeof form] ? 'translate-x-5.5 left-0.5' : 'translate-x-0.5'}`} />
                     </div>
-                    <span className="text-[#E2E8F0] text-sm">{opt.label}</span>
+                    <span className="text-[#E2E8F0] text-sm font-medium group-hover:text-white transition-colors">{opt.label}</span>
                   </label>
                 ))}
               </div>

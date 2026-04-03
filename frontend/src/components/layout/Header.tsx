@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import logo from '@/components/layout/logo/log.png';
 import { BCN_MAIN_CATEGORIES, BCN_MORE_CATEGORIES } from '@/lib/categories';
-// 🔹 API config import (তোমার প্রোজেক্টের পাথ অনুযায়ী ঠিক করে নিও)
 import { apiUrl } from '@/lib/config'; 
 
 export default function Header() {
@@ -19,7 +18,6 @@ export default function Header() {
   const [time, setTime] = useState('');
   const [dark, setDark] = useState(false);
   
-  // 🔹 নতুন: Ticker Text State
   const [tickerText, setTickerText] = useState('স্বাগতম বেঙ্গল ক্রনিকল নেটওয়ার্কে - সত্যের সাথে, সবসময়...');
 
   useEffect(() => {
@@ -48,10 +46,8 @@ export default function Header() {
       setDark(isDark);
     };
 
-    // 🔹 নতুন: Backend থেকে Ticker Text ফেচ করা
     const fetchTickerText = async () => {
       try {
-        // SiteSettings থেকে HEADER_TICKER_TEXT ফেচ করা হচ্ছে
         const res = await fetch(apiUrl('/settings/HEADER_TICKER_TEXT'));
         if (res.ok) {
           const data = await res.json();
@@ -64,7 +60,7 @@ export default function Header() {
 
     updateTime();
     checkTheme();
-    fetchTickerText(); // টিকার লোড করা
+    fetchTickerText();
     setMounted(true);
 
     const timer = setInterval(updateTime, 60000);
@@ -86,7 +82,6 @@ export default function Header() {
 
   return (
     <>
-      {/* 🔹 টিকার স্ক্রল অ্যানিমেশনের জন্য CSS */}
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes scroll-left {
           0% { transform: translateX(100%); }
@@ -140,21 +135,18 @@ export default function Header() {
               background: 'linear-gradient(90deg, rgba(212,175,55,0.12), transparent)',
             }}
           >
-            {/* 1. Logo */}
             <Link href="/" aria-label="BCN Home" className="flex-shrink-0">
               <Image src={logo} alt="BCN" height={90} priority className="h-14 w-auto object-contain" />
             </Link>
 
-            {/* 🔹 2. Middle Scrolling Ticker (শুধু ডেস্কটপ ও ট্যাবলেটে দেখাবে) */}
+            {/* 🔹 মেইন হেডারের ভেতরে এটি শুধু ডেস্কটপে (`hidden md:flex`) থাকবে। মোবাইলে থাকবে না। */}
             <div className="hidden md:flex flex-1 max-w-2xl bg-[var(--bg3)] border border-[var(--border)] rounded-full overflow-hidden items-center shadow-inner relative h-10">
-              {/* লেবেল */}
               <div className="absolute left-0 z-10 h-full flex items-center px-4 rounded-r-full shadow-[2px_0_10px_rgba(0,0,0,0.1)]" style={{ background: 'var(--accent-red)' }}>
                  <span className="text-white text-[11px] font-bold tracking-widest flex items-center gap-1.5">
                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                    ফ্ল্যাশ
                  </span>
               </div>
-              {/* স্ক্রলিং টেক্সট */}
               <div className="flex-1 overflow-hidden ml-20 relative h-full flex items-center">
                 <span className="animate-scroll-left text-sm font-medium cursor-pointer" style={{ color: 'var(--text)' }}>
                   {tickerText} &nbsp;&nbsp;&nbsp; • &nbsp;&nbsp;&nbsp; {tickerText}
@@ -162,7 +154,6 @@ export default function Header() {
               </div>
             </div>
 
-            {/* 3. Action Buttons */}
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 onClick={toggleTheme}

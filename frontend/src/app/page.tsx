@@ -1,39 +1,47 @@
-import SharedNewsLayout from '../components/news/SharedNewsLayout';
-import SponsorPopup from '../components/news/SponsorPopup';
-import TopBannerAd from '../components/ads/TopBannerAd';
-import BottomStickyAd from '../components/ads/BottomStickyAd';
-import { serverGet } from '../lib/api/server';
-
-export const revalidate = 60;
+import Header from '@/components/layout/Header';
+// 🔹 নতুন কম্পোনেন্ট ইম্পোর্ট করা হলো
+import MobileTicker from '@/components/layout/Header/MobileTicker'; 
+import SharedNewsLayout from '@/components/news/SharedNewsLayout';
+import { apiUrl } from '@/lib/config';
 
 async function getArticles() {
-  const data = await serverGet<{ data?: any[] }>('/articles?status=PUBLISHED&limit=20', 60);
-  return data?.data || [];
+  const res = await fetch(apiUrl('/articles'), { next: { revalidate: 30 } });
+  if (!res.ok) return { data: [], pagination: {} };
+  return res.json();
 }
 
 async function getBreaking() {
-  const data = await serverGet<{ data?: any[] }>('/articles/breaking', 30);
-  return data?.data || [];
+  const res = await fetch(apiUrl('/articles/breaking'), { next: { revalidate: 60 } });
+  if (!res.ok) return { data: [], pagination: {} };
+  return res.json();
 }
 
 async function getTrending() {
-  const data = await serverGet<{ data?: any[] }>('/articles/trending', 120);
-  return data?.data || [];
+  const res = await fetch(apiUrl('/articles/trending'), { next: { revalidate: 120 } });
+  if (!res.ok) return { data: [], pagination: {} };
+  return res.json();
 }
 
 export default async function HomePage() {
-  const [articles, breaking, trending] = await Promise.all([
+  const [allRes, breakingRes, trendingRes] = await Promise.all([
     getArticles(),
     getBreaking(),
     getTrending(),
   ]);
 
+  const articles = allRes.data || [];
+  const breaking = breakingRes.data || [];
+  const trending = trendingRes.data || [];
+
   return (
-    <>
-      <SponsorPopup />
-      <TopBannerAd />
-      <SharedNewsLayout articles={articles} breaking={breaking} trending={trending} />
-      <BottomStickyAd />
-    </>
+    <div className="flex min-h-screen flex-col" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+      
+      {/* 🔹 মোবাইলের জন্য ফ্ল্যাশ নিউজ Ticker হেডারের ঠিক নিচে, হিরো সেকশনের উপরে দেওয়া হলো */}
+      <MobileTicker />
+
+      <main className="flex-1">
+        <SharedNewsLayout articles={articles} breaking={breaking} trending={trending} />
+      </main>
+    </div>
   );
 }

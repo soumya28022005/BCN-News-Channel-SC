@@ -8,34 +8,43 @@ export default function AdminSettingsPage() {
   const { isAuthenticated, loadFromStorage, user, logout } = useAuthStore();
   const router = useRouter();
 
-  useEffect(() => { loadFromStorage(); }, []);
+  useEffect(() => { loadFromStorage(); }, [loadFromStorage]);
+  
   useEffect(() => {
     if (!isAuthenticated) router.push('/auth/login');
-  }, [isAuthenticated]);
+  }, [isAuthenticated, router]);
 
   if (!isAuthenticated) return null;
 
   return (
     <div className="min-h-screen bg-[#0A0A0F]">
-      <header className="bg-[#111118] border-b border-[#1E1E2E] px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+      {/* 🔹 FIX: Header is now sticky and matches Create/Edit page design */}
+      <header className="bg-[#111118] border-b border-[#1E1E2E] px-6 py-4 sticky top-0 z-10">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/admin" className="w-9 h-9 bg-[#E53E3E] flex items-center justify-center font-bold text-white text-sm rounded-sm">BCN</Link>
+            {/* 🔹 FIX: Logo link changed to main dashboard instead of /admin */}
+            <Link href="/newsroom-bcn-2024" className="w-9 h-9 bg-[#E53E3E] flex items-center justify-center font-bold text-white text-sm rounded-sm">
+              BCN
+            </Link>
             <div>
               <h1 className="text-white font-bold text-sm">সেটিংস</h1>
-              <Link href="/admin" className="text-[#64748B] text-xs hover:text-[#E53E3E]">← Dashboard</Link>
+              {/* 🔹 FIX: Real Back button logic */}
+              <span onClick={() => router.back()} className="text-[#64748B] text-xs hover:text-[#E53E3E] cursor-pointer select-none">
+                ← ফিরে যান
+              </span>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
+      {/* 🔹 FIX: Changed max-w-4xl to max-w-5xl to match other pages precisely */}
+      <div className="max-w-5xl mx-auto px-6 py-8 space-y-6">
         {/* Profile */}
         <div className="bg-[#111118] border border-[#1E1E2E] rounded-lg p-6">
           <h3 className="text-white font-bold mb-4">প্রোফাইল</h3>
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-full bg-[#E53E3E] flex items-center justify-center text-white font-bold text-xl">
-              {user?.name?.charAt(0)}
+              {user?.name?.charAt(0) || 'U'}
             </div>
             <div>
               <p className="text-white font-medium">{user?.name}</p>
