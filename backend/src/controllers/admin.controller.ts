@@ -131,3 +131,44 @@ export const getAdminArticles = asyncHandler(async (req: Request, res: Response)
     },
   });
 });
+export const deleteUser = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const user = await prisma.user.findUnique({ where: { id: id as string } });
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'User not found' });
+  }
+
+  // Security purpose: Super Admin কে ডিলিট করা যাবে না
+  if (user.role === 'SUPER_ADMIN') {
+    return res.status(403).json({ success: false, message: 'Super Admin কে ডিলিট করা যাবে না' });
+  }
+
+  // 🔹 Foreign Key Constraint Fix: 
+  // Prisma Transaction এর মাধ্যমে ইউজারের সব রিলেটেড ডাটা আগে রিমুভ করা হচ্ছে
+  await prisma.$transaction([
+    // ১. ইউজারের কোনো আর্টিকেল রিভিশন থাকলে তা ডিলিট
+    prisma.articleRevision.deleteMany({ where: { editorId: id as string } }),
+
+    // ২. এই ইউজার যদি অন্য কারো আর্টিকেল এডিট করে থাকে, সেখান থেকে তার নাম সরিয়ে দেওয়া
+    prisma.article.updateMany({
+      where: { lastEditorId: id as string },
+      data: { lastEditorId: null }
+    }),
+
+    // ৩. ইউজারের নিউজলেটার সাবস্ক্রিপশন থাকলে ডিলিট 
+    prisma.newsletter.deleteMany({ where: { userId: id as string } }),
+
+    // ৪. ইউজারের লেখা সমস্ত আর্টিকেল ডিলিট 
+    // (নোট: আর্টিকেলের সাথে থাকা ছবি, ট্যাগ, কমেন্টগুলো Prisma-র onDelete: Cascade এর জন্য অটো ডিলিট হয়ে যাবে)
+    prisma.article.deleteMany({ where: { authorId: id as string } }),
+
+    // ৫. অবশেষে মেইন ইউজারকে ডাটাবেস থেকে ডিলিট
+    prisma.user.delete({ where: { id: id as string } }),
+  ]);
+
+  res.json({
+    success: true,
+    message: 'User and related data successfully deleted',
+  });
+});

@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../../../store/auth.store';
 import { api } from '../../../lib/api';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+
 export default function AdminUsersPage() {
-  // 🔹 FIX 1: Added authLoading to prevent premature kicks
   const { isAuthenticated, isLoading: authLoading, loadFromStorage } = useAuthStore();
   const router = useRouter();
   const [users, setUsers] = useState<any[]>([]);
@@ -20,7 +21,7 @@ export default function AdminUsersPage() {
   }, [loadFromStorage]);
 
   useEffect(() => {
-    if (authLoading) return; // Wait for session check
+    if (authLoading) return; 
     
     if (!isAuthenticated) {
       router.push('/auth/login');
@@ -32,7 +33,7 @@ export default function AdminUsersPage() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const data = await api.get<any>('/users');
+      const data = await api.get<any>('/admin/users'); // Ensure getting all users
       setUsers(data.data || []);
     } catch { }
     finally { setLoading(false); }
@@ -52,6 +53,49 @@ export default function AdminUsersPage() {
       }
     } catch (err) {
       alert('সিস্টেমে সমস্যা হয়েছে');
+    }
+  };
+
+  // 🔹 নতুন: স্ট্যাটাস (সক্রিয়/নিষ্ক্রিয়) পরিবর্তন করার ফাংশন
+  const handleToggleStatus = async (userId: string, currentStatus: boolean, userName: string) => {
+    const action = currentStatus ? 'নিষ্ক্রিয় (Suspend)' : 'সক্রিয় (Activate)';
+    if (confirm(`আপনি কি ${userName}-কে ${action} করতে চান?`)) {
+      try {
+        const response = await fetch(`${API_URL}/admin/users/${userId}/toggle-status`, {
+          method: 'PATCH',
+          credentials: 'include',
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+          fetchUsers(); // ডাটা আপডেট করার জন্য লিস্ট রিফ্রেশ
+        } else {
+          alert(data.message || 'কোনো একটা সমস্যা হয়েছে!');
+        }
+      } catch (error) {
+        console.error(error);
+        alert('সার্ভারের সাথে যোগাযোগ করতে পারিনি।');
+      }
+    }
+  };
+
+  // 🔹 নতুন: ইউজার ডিলিট করার ফাংশন
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (confirm(`আপনি কি সত্যিই ${userName}-কে ডিলিট করতে চান? এই অ্যাকশনটি ফেরত নেওয়া যাবে না।`)) {
+      try {
+        const response = await fetch(`${API_URL}/admin/users/${userId}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+          fetchUsers(); // ডাটা আপডেট করার জন্য লিস্ট রিফ্রেশ
+        } else {
+          alert(data.message || 'কোনো একটা সমস্যা হয়েছে!');
+        }
+      } catch (error) {
+        console.error(error);
+        alert('সার্ভারের সাথে যোগাযোগ করতে পারিনি।');
+      }
     }
   };
 
@@ -76,15 +120,12 @@ export default function AdminUsersPage() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0F]">
-      {/* 🔹 FIX 2: Sticky Header and max-w-5xl alignment */}
       <header className="bg-[#111118] border-b border-[#1E1E2E] px-6 py-4 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {/* 🔹 FIX 3: Link points to correct Dashboard */}
             <Link href="/newsroom-bcn-2024" className="w-9 h-9 bg-[#E53E3E] flex items-center justify-center font-bold text-white text-sm rounded-sm shadow-lg">BCN</Link>
             <div>
               <h1 className="text-white font-bold text-sm">ইউজার ম্যানেজমেন্ট</h1>
-              {/* 🔹 FIX 4: Real Back logic */}
               <span onClick={() => router.back()} className="text-[#64748B] text-xs hover:text-[#E53E3E] cursor-pointer select-none transition-colors">
                 ← ফিরে যান
               </span>
@@ -99,9 +140,7 @@ export default function AdminUsersPage() {
         </div>
       </header>
 
-      {/* 🔹 FIX 5: Content width set to max-w-5xl to match rest of the app */}
       <div className="max-w-5xl mx-auto px-6 py-8">
-        {/* Notun User Add korar Form */}
         {showForm && (
           <div className="mb-8 bg-[#111118] border border-[#1E1E2E] rounded-xl p-6 shadow-2xl animate-in fade-in slide-in-from-top-4">
             <h3 className="text-white font-bold mb-5 tracking-wide">নতুন ইউজার/রিপোর্টার যোগ করুন</h3>
@@ -136,7 +175,6 @@ export default function AdminUsersPage() {
           </div>
         )}
 
-        {/* User List Table */}
         <div className="bg-[#111118] border border-[#1E1E2E] rounded-xl overflow-hidden shadow-2xl">
           <div className="px-6 py-5 border-b border-[#1E1E2E] flex items-center justify-between bg-[#0A0A0F]/50">
             <h3 className="text-white font-bold tracking-wide">সব ব্যবহারকারী</h3>
@@ -164,9 +202,35 @@ export default function AdminUsersPage() {
                     <span className={`text-[10px] px-2.5 py-1.5 rounded-md font-bold uppercase tracking-wider ${roleColor[user.role] || 'bg-[#64748B]/20 text-[#64748B] border border-[#64748B]/20'}`}>
                       {roleLabel[user.role] || user.role}
                     </span>
-                    <span className={`text-[10px] px-2.5 py-1.5 rounded-md font-bold tracking-wider border ${user.isActive ? 'bg-[#16A34A]/10 text-[#16A34A] border-[#16A34A]/30' : 'bg-[#E53E3E]/10 text-[#E53E3E] border-[#E53E3E]/30'}`}>
-                      {user.isActive ? 'সক্রিয়' : 'নিষ্ক্রিয়'}
-                    </span>
+                    
+                    {/* 🔹 FIX: স্ট্যাটাস বাটনটি ক্লিকেবল করা হয়েছে */}
+                    {user.role !== 'SUPER_ADMIN' ? (
+                      <button
+                        onClick={() => handleToggleStatus(user.id, user.isActive, user.name)}
+                        className={`text-[10px] px-2.5 py-1.5 rounded-md font-bold tracking-wider border cursor-pointer hover:opacity-80 transition-opacity ${
+                          user.isActive ? 'bg-[#16A34A]/10 text-[#16A34A] border-[#16A34A]/30' : 'bg-[#E53E3E]/10 text-[#E53E3E] border-[#E53E3E]/30'
+                        }`}
+                      >
+                        {user.isActive ? 'সক্রিয়' : 'নিষ্ক্রিয়'}
+                      </button>
+                    ) : (
+                      <span className="text-[10px] px-2.5 py-1.5 rounded-md font-bold tracking-wider border bg-[#16A34A]/10 text-[#16A34A] border-[#16A34A]/30 opacity-50 cursor-not-allowed">
+                        সক্রিয়
+                      </span>
+                    )}
+
+                    {/* 🔹 FIX: ডিলিট বাটন যোগ করা হয়েছে */}
+                    {user.role !== 'SUPER_ADMIN' && (
+                      <button 
+                        onClick={() => handleDeleteUser(user.id, user.name)}
+                        className="text-[#E53E3E] hover:text-white hover:bg-[#E53E3E] p-1.5 rounded-md border border-[#E53E3E]/30 opacity-70 hover:opacity-100 transition-all ml-2"
+                        title="Delete User"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
