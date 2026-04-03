@@ -39,30 +39,37 @@ export default function BottomStickyAd() {
   const currentAd = ads[currentIndex];
 
   return (
-    <>
-      <div className="h-[80px]" /> {/* Spacer */}
-      
-      <div className="fixed bottom-0 left-0 right-0 z-[100] flex justify-center p-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] transition-all duration-300" style={{ background: 'var(--bg2)', borderTop: '1px solid var(--border)' }}>
-        <div className="relative w-full max-w-[720px] rounded-lg overflow-hidden bg-white dark:bg-black transition-opacity duration-500">
-          
-          <button 
-            onClick={() => setVisible(false)} 
-            className="absolute top-1 right-1 z-10 text-[10px] px-2 py-1 bg-black/70 hover:bg-black text-white rounded shadow"
-          >
-            ✕ Close
-          </button>
+    // ✅ FIX: <div className="h-[80px]" /> স্পেসারটি এখান থেকে পুরোপুরি মুছে দেওয়া হয়েছে।
+    <div className="fixed bottom-0 left-0 right-0 z-[100] flex justify-center p-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] transition-all duration-300" style={{ background: 'var(--bg2)', borderTop: '1px solid var(--border)' }}>
+      <div className="relative w-full max-w-[720px] rounded-lg overflow-hidden bg-white dark:bg-[#0A1A3A] transition-opacity duration-500 border border-gray-200 dark:border-gray-800">
+        
+        <button 
+          onClick={() => setVisible(false)} 
+          className="absolute top-0 right-0 z-50 text-[10px] px-3 py-1 bg-black/60 hover:bg-black text-white rounded-bl-lg shadow transition-colors"
+        >
+          ✕ Close
+        </button>
+        
+        <span className="text-[8px] text-white uppercase tracking-widest absolute top-0 left-0 font-bold opacity-80 z-10 bg-black/40 px-2 py-0.5 rounded-br-lg pointer-events-none">
+          Advertisement
+        </span>
 
-          {AD_CONFIG.ADSENSE_ENABLED ? (
+        {AD_CONFIG.ADSENSE_ENABLED ? (
+          <div className="w-full flex justify-center py-0.5">
             <ins className="adsbygoogle"
-                 style={{ display: 'inline-block', width: '100%', height: '80px' }}
+                 style={{ display: 'inline-block', width: '100%', height: '60px' }}
                  data-ad-client={AD_CONFIG.ADSENSE_CLIENT_ID}></ins>
-          ) : (
-            <a href={currentAd?.linkUrl || '#'} target="_blank" rel="noreferrer" className="block w-full">
-              <img src={currentAd?.imageUrl} alt="Advertisement" className="w-full h-[80px] object-contain" />
-            </a>
-          )}
-        </div>
+          </div>
+        ) : (
+          <a href={currentAd?.linkUrl || '#'} target="_blank" rel="noreferrer" className="block w-full flex justify-center py-0.5">
+            <img 
+              src={currentAd?.imageUrl} 
+              alt="Advertisement" 
+              className="w-full h-[55px] md:h-[65px] object-contain mx-auto" 
+            />
+          </a>
+        )}
       </div>
-    </>
+    </div>
   );
 }
