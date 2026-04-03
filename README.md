@@ -476,8 +476,7 @@ GOOGLE_VERIFICATION_TOKEN=your-google-token
 ---
 
 ## FOR ADMIN USER AND PASSWORD
-Email:    admin@bengalchronicle.com
-Password: Admin@BCN2024!
+
 
 ## backend check
 http://localhost:3000/auth/login
@@ -505,3 +504,5 @@ cd /Users/soumyachatterjee/Desktop/bcn-platform/backend && npx ts-node-dev --tra
 *Built with ❤️ for BCN – The Bengal Chronicle Network*
 *"Truth. Speed. Bengal."*# BCN-News-Channel-SC
 # BCN-News-Channel-SC
+
+Soumya
