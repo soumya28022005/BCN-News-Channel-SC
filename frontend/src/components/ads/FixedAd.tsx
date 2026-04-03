@@ -1,48 +1,44 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { api } from '../../lib/api'; // ✅ FIX: Imported the global API client
+import { useEffect, useState } from 'react';
+import { api } from '@/lib/api';
 
 export default function FixedAd() {
-  const [sponsors, setSponsors] = useState<any[]>([]);
+  const [ads, setAds] = useState<any[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    const fetchSponsors = async () => {
+    const fetchAd = async () => {
       try {
-        // ✅ FIX: Replaced raw fetch with api.get()
         const res = await api.get<any>('/sponsor');
-        const adsArray = res.data || res; 
-
-        if (Array.isArray(adsArray)) {
-          const activeAds = adsArray.filter((ad: any) => ad.isActive);
-          setSponsors(activeAds);
-        }
-      } catch (error) {
-        console.warn("⚠️ Ad System: Could not fetch sponsors from backend.", error);
+        const adsArray = res?.data?.data || res?.data || res || [];
         
-        setSponsors([{
-          id: 'fallback-1',
-          isActive: true,
-          imageUrl: 'https://via.placeholder.com/300x250/1a1a1a/c9a84c?text=Your+Ad+Here',
-          linkUrl: '#'
-        }]);
-      }
+        // ✅ FIX: এখানে শুধুমাত্র "SIDEBAR" অ্যাডগুলো ফিল্টার করা হলো
+        const sidebarAds = adsArray.filter((a: any) => a.position === 'SIDEBAR' && a.isActive);
+        
+        if (sidebarAds.length > 0) setAds(sidebarAds);
+      } catch (error) {}
     };
-    
-    fetchSponsors();
+    fetchAd();
   }, []);
 
-  if (!sponsors.length) return null;
+  // একাধিক সাইডবার অ্যাড থাকলে ৫ সেকেন্ড পর পর অ্যানিমেশনসহ পরিবর্তন হবে
+  useEffect(() => {
+    if (ads.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % ads.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [ads.length]);
+
+  if (ads.length === 0) return null;
+  const currentAd = ads[currentIndex];
 
   return (
-    <div className="flex flex-col gap-6 my-6">
-      {sponsors.map((ad) => (
-        <div key={ad.id} className="relative rounded-xl overflow-hidden" style={{ background: 'var(--card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-md)' }}>
-          <div className="absolute top-2 right-2 text-[9px] px-2 py-1 rounded" style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}>AD</div>
-          <a href={ad.linkUrl !== '#' ? ad.linkUrl : undefined} target="_blank" rel="noreferrer">
-            <img src={ad.imageUrl} alt="Advertisement" className="w-full h-auto object-cover transition-transform duration-500 hover:scale-105" />
-          </a>
-        </div>
-      ))}
+    <div className="my-8 w-full transition-opacity duration-500 fade-in">
+      <div className="text-[10px] text-gray-400 uppercase tracking-widest mb-2 text-center font-bold">Advertisement</div>
+      <a href={currentAd?.linkUrl || '#'} target="_blank" rel="noopener noreferrer" className="block max-w-[300px] mx-auto rounded-xl overflow-hidden shadow-lg hover:scale-105 transition-transform duration-500" style={{ border: '1px solid var(--border)' }}>
+        <img src={currentAd?.imageUrl} alt="Ad" className="w-full h-auto object-cover" />
+      </a>
     </div>
   );
 }

@@ -105,11 +105,9 @@ export default function SponsorManagerPage() {
   if (!isAuthenticated || !user) return null;
 
   return (
-    // 🔹 FIX: Background now handles both Light (bg-gray-50) and Dark (gradient) modes
     <div className="min-h-screen font-bangla p-8 bg-gray-50 dark:bg-[#0A1A3A] transition-colors duration-300">
       <div className="max-w-6xl mx-auto">
         
-        {/* Back Button */}
         <span onClick={() => router.back()} className="text-blue-600 dark:text-[#D4AF37] hover:underline mb-6 inline-block font-mono text-sm cursor-pointer select-none">
           ← ড্যাশবোর্ডে ফিরে যান
         </span>
@@ -120,7 +118,6 @@ export default function SponsorManagerPage() {
 
         {success && <div className="bg-green-100 dark:bg-green-500/10 border border-green-400 dark:border-green-500/30 text-green-700 dark:text-green-400 p-4 rounded-lg mb-6 shadow-md">✅ {success}</div>}
 
-        {/* 🔹 FIX: Form Container properly styled for Light/Dark */}
         <div className="bg-white dark:bg-[#0A1A3A]/60 border border-gray-200 dark:border-[#D4AF37]/20 p-8 rounded-2xl shadow-lg dark:shadow-2xl mb-10 transition-colors">
           <h3 className="text-blue-700 dark:text-[#D4AF37] font-bold text-xl mb-6">
             {editingId ? 'বিজ্ঞাপন এডিট করুন' : 'নতুন বিজ্ঞাপন তৈরি করুন'}
@@ -133,12 +130,15 @@ export default function SponsorManagerPage() {
                   <label className="text-gray-500 dark:text-gray-300 text-xs uppercase mb-1 block">বিজ্ঞাপনের ধরন</label>
                   <select value={form.position} onChange={e => setForm({...form, position: e.target.value})} className="w-full bg-gray-50 dark:bg-[#0A1A3A]/80 text-gray-900 dark:text-white border border-gray-300 dark:border-[#D4AF37]/30 rounded p-3 focus:outline-none focus:border-blue-500 dark:focus:border-[#D4AF37]">
                     <option value="POPUP">📺 পপআপ (Popup)</option>
-                    <option value="SIDEBAR">📱 সাইডবার (Sidebar)</option>
+                    <option value="TOP">⬆️ টপ ব্যানার (Top)</option>
+                    <option value="BOTTOM">⬇️ বটম ফিক্সড (Bottom Mobile)</option>
+                    <option value="SIDEBAR">📱 সাইডবার (Sidebar Desktop)</option>
+                    <option value="IN_CONTENT">📝 আর্টিকেলের মাঝে (In-Content)</option>
                   </select>
                 </div>
                 <div className="w-1/3">
                   <label className="text-gray-500 dark:text-gray-300 text-xs uppercase mb-1 block">সময় (সেকেন্ড)</label>
-                  <input type="number" min="0" value={form.duration} onChange={e => setForm({...form, duration: parseInt(e.target.value) || 0})} className="w-full bg-gray-50 dark:bg-[#0A1A3A]/80 text-gray-900 dark:text-white border border-gray-300 dark:border-[#D4AF37]/30 rounded p-3 focus:outline-none focus:border-blue-500 dark:focus:border-[#D4AF37]" placeholder="5" />
+                  <input type="number" min="0" value={form.duration} onChange={e => setForm({...form, duration: parseInt(e.target.value) || 0})} className="w-full bg-gray-50 dark:bg-[#0A1A3A]/80 text-gray-900 dark:text-white border border-gray-300 dark:border-[#D4AF37]/30 rounded p-3 focus:outline-none focus:border-blue-500 dark:focus:border-[#D4AF37]" placeholder="5" disabled={form.position !== 'POPUP'} title="এটি শুধুমাত্র পপআপ অ্যাডের জন্য কাজ করবে" />
                 </div>
               </div>
 
@@ -184,12 +184,11 @@ export default function SponsorManagerPage() {
           <div className="mt-6 flex justify-end gap-4">
             {editingId && <button type="button" onClick={resetForm} className="px-6 py-3 rounded text-gray-700 dark:text-white border border-gray-300 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">বাতিল</button>}
             <button type="button" onClick={handleSave} disabled={loading || (!form.imageUrl && !imageFile)} className="px-8 py-3 rounded font-bold text-white dark:text-[#0A1A3A] bg-blue-600 hover:bg-blue-700 dark:bg-none transition-all hover:scale-105 disabled:opacity-50" style={{ background: document.documentElement.classList.contains('dark') ? 'linear-gradient(135deg, #D4AF37, #B8960C)' : '' }}>
-              {loading ? '...' : 'সেভ করুন'}
+               {loading ? '...' : 'সেভ করুন'}
             </button>
           </div>
         </div>
 
-        {/* 🔹 FIX: Table properly styled for Light/Dark */}
         <div className="bg-white dark:bg-[#0A1A3A]/60 border border-gray-200 dark:border-[#D4AF37]/20 rounded-xl overflow-hidden shadow-lg dark:shadow-2xl transition-colors">
           <div className="p-5 border-b border-gray-200 dark:border-[#D4AF37]/20 bg-gray-50 dark:bg-[#0A1A3A]">
             <h3 className="text-gray-900 dark:text-white font-bold">সব বিজ্ঞাপন</h3>

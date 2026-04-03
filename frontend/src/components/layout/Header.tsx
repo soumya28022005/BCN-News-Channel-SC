@@ -136,10 +136,17 @@ export default function Header() {
             }}
           >
             <Link href="/" aria-label="BCN Home" className="flex-shrink-0">
-              <Image src={logo} alt="BCN" height={90} priority className="h-14 w-auto object-contain" />
+              <Image 
+                src={logo} 
+                alt="BCN Logo" 
+                height={56} // h-14 equivalent
+                width={150} // Provide a rough width to prevent layout shift
+                priority 
+                sizes="(max-width: 768px) 100px, 150px"
+                className="h-14 w-auto object-contain" 
+              />
             </Link>
 
-            {/* 🔹 মেইন হেডারের ভেতরে এটি শুধু ডেস্কটপে (`hidden md:flex`) থাকবে। মোবাইলে থাকবে না। */}
             <div className="hidden md:flex flex-1 max-w-2xl bg-[var(--bg3)] border border-[var(--border)] rounded-full overflow-hidden items-center shadow-inner relative h-10">
               <div className="absolute left-0 z-10 h-full flex items-center px-4 rounded-r-full shadow-[2px_0_10px_rgba(0,0,0,0.1)]" style={{ background: 'var(--accent-red)' }}>
                  <span className="text-white text-[11px] font-bold tracking-widest flex items-center gap-1.5">

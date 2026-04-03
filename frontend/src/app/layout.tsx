@@ -4,6 +4,9 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import './globals.css';
 
+// ✅ FIX: সরাসরি অ্যাড ইমপোর্ট না করে AdsWrapper ইমপোর্ট করা হলো
+import AdsWrapper from '../components/ads/AdsWrapper';
+
 const tiroBangla = Tiro_Bangla({
   weight: ['400'],
   subsets: ['bengali', 'latin'],
@@ -26,8 +29,8 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://www.bcnnetwork.in'),
   title: {
-    default: 'BCN – The Bengal Chronicle Network',
-    template: '%s | BCN – The Bengal Chronicle Network',
+    default: 'BCN - The Bengal Chronicle Network',
+    template: '%s | BCN - The Bengal Chronicle Network',
   },
   description: 'বাংলার সবচেয়ে বিশ্বস্ত ডিজিটাল সংবাদ মাধ্যম',
   keywords: ['বাংলা সংবাদ', 'পশ্চিমবঙ্গ সংবাদ', 'BCN', 'The Bengal Chronicle Network'],
@@ -39,7 +42,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'BCN – The Bengal Chronicle Network',
+    title: 'BCN - The Bengal Chronicle Network',
     description: 'বাংলার সবচেয়ে বিশ্বস্ত ডিজিটাল সংবাদ মাধ্যম',
   },
   alternates: {
@@ -49,7 +52,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="bn" suppressHydrationWarning>
+    <html lang="bn" suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -66,6 +69,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`${tiroBangla.variable} ${playfair.variable} ${jetbrains.variable}`}>
         <Header />
+        
+        {/* ✅ FIX: AdsWrapper এখানে দেওয়া হলো, যা অ্যাডমিনে অ্যাড ব্লক করবে */}
+        <AdsWrapper />
+        
         {children}
         <Footer />
       </body>

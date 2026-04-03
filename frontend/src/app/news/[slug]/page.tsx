@@ -4,6 +4,7 @@ import Image from 'next/image';
 import type { Metadata } from 'next';
 import FixedAd from '../../../components/ads/FixedAd';
 import { apiUrl, SITE_URL } from '../../../lib/config';
+import { injectInContentAds } from '../../../lib/adInjector'; // ✅ FIX: ইমপোর্ট করা হলো
 
 type ArticleAuthor = {
   name?: string;
@@ -59,6 +60,25 @@ async function getRelated(slug: string): Promise<Article[]> {
     return data?.data?.articles || data?.data || [];
   } catch (error) {
     console.error('Failed to fetch related articles:', error);
+    return [];
+  }
+}
+
+// ✅ FIX: ইন-কনটেন্ট অ্যাডগুলো সার্ভার থেকে আনার ফাংশন
+async function getInContentAds(): Promise<any[]> {
+  try {
+    const res = await fetch(apiUrl('/sponsor'), {
+      next: { revalidate: 60 },
+      headers: { Accept: 'application/json' },
+    });
+
+    if (!res.ok) return [];
+
+    const data = await res.json();
+    const adsArray = data?.data || data || [];
+    return adsArray.filter((ad: any) => ad.position === 'IN_CONTENT' && ad.isActive);
+  } catch (error) {
+    console.error('Failed to fetch in-content ads:', error);
     return [];
   }
 }
@@ -166,9 +186,11 @@ export default async function ArticlePage({
 }) {
   const { slug } = await params;
 
-  const [article, related] = await Promise.all([
+  // ✅ FIX: ৩টি API একসাথে কল হচ্ছে (Article, Related, Ads)
+  const [article, related, inContentAds] = await Promise.all([
     getArticle(slug),
     getRelated(slug),
+    getInContentAds(),
   ]);
 
   if (!article || !article.title) {
@@ -178,6 +200,9 @@ export default async function ArticlePage({
   const articleUrl = `${SITE_URL}/news/${article.slug}`;
   const imageUrl = article.thumbnail || `${SITE_URL}/default-share.jpg`;
   const sourceUrl = getSafeSourceUrl(article.source);
+
+  // ✅ FIX: প্যারাগ্রাফের মাঝে সুন্দরভাবে অ্যাড বসিয়ে দেওয়া হলো
+  const finalHtmlContent = injectInContentAds(article.content || '', inContentAds);
 
   const articleJsonLd = {
     '@context': 'https://schema.org',
@@ -339,9 +364,10 @@ export default async function ArticlePage({
                 </div>
               )}
 
+              {/* ✅ FIX: অ্যাড মিক্স করা HTML রেন্ডার হচ্ছে */}
               <div
                 className="prose max-w-none text-lg leading-relaxed article-content transition-colors prose-img:rounded-xl prose-img:w-full prose-img:shadow-md mb-10"
-                dangerouslySetInnerHTML={{ __html: article.content || '' }}
+                dangerouslySetInnerHTML={{ __html: finalHtmlContent }}
               />
 
               {sourceUrl && (
@@ -407,6 +433,7 @@ export default async function ArticlePage({
                 )}
               </div>
 
+              {/* ✅ FixedAd এখন শুধু SIDEBAR অ্যাড দেখাবে (আগের নির্দেশ মতো FixedAd.tsx আপডেট করলে) */}
               <FixedAd />
             </aside>
           </div>

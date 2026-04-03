@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { apiUrl } from '../../../lib/config';
 
-export const revalidate = 60;
+// ✅ FIX: এই লাইনটি যোগ করুন যাতে Next.js এটিকে ডায়নামিক API হিসেবে ধরে
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
