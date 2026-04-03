@@ -506,3 +506,5 @@ cd /Users/soumyachatterjee/Desktop/bcn-platform/backend && npx ts-node-dev --tra
 # BCN-News-Channel-SC
 
 new some update this feature 1
+
+soumya
