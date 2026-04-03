@@ -38,7 +38,7 @@ export default function EditArticlePage() {
 
     // 🔹 FIX 2: Removed buggy localStorage check. Now relying completely on Zustand auth state.
     if (!isAuthenticated) { 
-      router.push('/api/v1/auth/s/o/n/a/m/o/u/l/i/u/m/y/a'); 
+      router.push('/'); 
       return; 
     }
     

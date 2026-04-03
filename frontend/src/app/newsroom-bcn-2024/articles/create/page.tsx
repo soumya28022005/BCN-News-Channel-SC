@@ -47,7 +47,7 @@ export default function CreateArticlePage() {
   // 🔹 3. 5-MINUTE INACTIVITY AUTO-LOGOUT 🔹
   useEffect(() => {
     if (!isAuthenticated) { 
-      router.push('/api/v1/auth/s/o/n/a/m/o/u/l/i/u/m/y/a'); 
+      router.push('/'); 
       return; 
     }
     

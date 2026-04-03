@@ -17,7 +17,9 @@ import {
   Clock,
   AlertCircle,
   Edit,
-  Radio // 🔹 নতুন আইকন Ticker এর জন্য
+  Radio,
+  Menu,
+  X
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -28,6 +30,8 @@ export default function AdminDashboard() {
   const [dataLoading, setDataLoading] = useState(true);
   const [stats, setStats] = useState({ articles: 0, published: 0, draft: 0, users: 0 });
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
+  
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     loadFromStorage();
@@ -127,14 +131,16 @@ export default function AdminDashboard() {
   if (authLoading || dataLoading) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0A1A3A] text-white">
-        Loading admin panel...
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
+          <p className="tracking-widest font-mono text-sm text-[#D4AF37]">LOADING PANEL...</p>
+        </div>
       </div>
     );
   }
 
   if (!isAuthenticated || !user) return null;
 
-  // 🔹 নতুন "ফ্ল্যাশ নিউজ (Ticker)" সাইডবারে অ্যাড করা হলো
   const sidebarLinks = [
     { label: 'ড্যাশবোর্ড', href: '/newsroom-bcn-2024', icon: <LayoutDashboard size={18} /> },
     { label: 'সব সংবাদ', href: '/newsroom-bcn-2024/articles', icon: <FileText size={18} /> },
@@ -145,19 +151,33 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex font-bangla overflow-hidden" style={{ background: 'radial-gradient(circle at top, #1A2E5A, #0A1A3A)' }}>
+    <div className="fixed inset-0 z-50 flex font-bangla overflow-hidden bg-[#0A1A3A]">
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
-        background: 'radial-gradient(circle at top, rgba(212,175,55,0.08), transparent 60%)',
+        background: 'radial-gradient(circle at top, rgba(212,175,55,0.05), transparent 60%)',
       }} />
 
-      <aside className="w-64 hidden lg:flex flex-col h-full z-10"
+      {/* 🔹 Smooth Backdrop Blur Animation */}
+      <div 
+        className={`fixed inset-0 bg-black/60 z-[60] lg:hidden backdrop-blur-md transition-all duration-500 ${
+          mobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
+        }`}
+        onClick={() => setMobileMenuOpen(false)}
+      />
+
+      {/* 🔹 Sidebar with Bouncing Slide Animation */}
+      <aside 
+        className={`w-64 flex flex-col h-full z-[70] fixed lg:relative transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+          mobileMenuOpen 
+            ? 'translate-x-0 shadow-[10px_0_50px_rgba(0,0,0,0.5)]' 
+            : '-translate-x-full lg:translate-x-0'
+        }`}
         style={{
-          background: 'rgba(10,26,58,0.7)',
-          backdropFilter: 'blur(10px)',
+          background: 'rgba(10,26,58,0.98)',
           borderRight: '1px solid rgba(212,175,55,0.15)'
         }}>
-        <div className="p-6">
+        
+        <div className="p-6 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
             <div className="w-8 h-8 flex items-center justify-center font-bold text-[#0A1A3A] rounded shadow-[0_0_10px_rgba(212,175,55,0.4)]"
               style={{ background: 'linear-gradient(135deg, #D4AF37, #B8960C)' }}>
@@ -165,14 +185,21 @@ export default function AdminDashboard() {
             </div>
             <span className="text-white font-bold tracking-widest text-sm" style={{ fontFamily: 'monospace' }}>SECURE PANEL</span>
           </Link>
+          
+          {/* 🔹 Beautiful Rotating Close Button */}
+          <button 
+            onClick={() => setMobileMenuOpen(false)}
+            className="lg:hidden p-2 rounded-full bg-white/5 text-[#D4AF37] transition-all duration-300 hover:bg-white/10 hover:rotate-90 hover:scale-110 active:scale-95"
+          >
+            <X size={20} />
+          </button>
         </div>
 
         <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
-          {sidebarLinks.map((link) => {
-            // 🔹 FIX: শুধুমাত্র Admin / Super Admin রা ইউজার, সেটিং এবং ফ্ল্যাশ নিউজ দেখতে পাবে
+          {sidebarLinks.map((link, index) => {
             const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
             if (!isAdmin && ['/newsroom-bcn-2024/users', '/newsroom-bcn-2024/ticker', '/newsroom-bcn-2024/settings'].includes(link.href)) {
-              return null; // Journalist রা এই মেনুগুলো দেখতে পাবে না
+              return null;
             }
             
             const isActive = pathname === link.href;
@@ -180,25 +207,33 @@ export default function AdminDashboard() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all"
-                style={isActive ? {
-                  background: 'rgba(212,175,55,0.15)',
-                  color: '#D4AF37',
-                  borderRight: '3px solid #D4AF37',
-                  boxShadow: 'inset 0 0 10px rgba(212,175,55,0.05)'
-                } : {
-                  color: 'rgba(122,134,182,0.8)'
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ease-out transform ${
+                  mobileMenuOpen ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0 lg:translate-x-0 lg:opacity-100'
+                }`}
+                style={{
+                  transitionDelay: mobileMenuOpen ? `${index * 50}ms` : '0ms',
+                  ... (isActive ? {
+                    background: 'rgba(212,175,55,0.15)',
+                    color: '#D4AF37',
+                    borderRight: '3px solid #D4AF37',
+                    boxShadow: 'inset 0 0 10px rgba(212,175,55,0.05)'
+                  } : {
+                    color: 'rgba(122,134,182,0.8)'
+                  })
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
                     e.currentTarget.style.color = '#D4AF37';
                     e.currentTarget.style.background = 'rgba(212,175,55,0.05)';
+                    e.currentTarget.style.transform = 'translateX(6px)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isActive) {
                     e.currentTarget.style.color = 'rgba(122,134,182,0.8)';
                     e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.transform = 'translateX(0)';
                   }
                 }}
               >
@@ -210,7 +245,7 @@ export default function AdminDashboard() {
         </nav>
 
         <div className="p-4" style={{ borderTop: '1px solid rgba(212,175,55,0.15)' }}>
-          <button onClick={logout} className="flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors"
+          <button onClick={logout} className="flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-all duration-300 hover:translate-x-2"
             style={{ color: 'rgba(122,134,182,0.8)' }}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = '#EF4444';
@@ -228,66 +263,77 @@ export default function AdminDashboard() {
       </aside>
 
       <main className="flex-1 h-full overflow-y-auto z-10 relative">
-        <header className="px-8 py-4 sticky top-0 z-20 flex items-center justify-between"
+        <header className="px-4 lg:px-8 py-4 sticky top-0 z-20 flex items-center justify-between"
           style={{
-            background: 'rgba(10,26,58,0.7)',
+            background: 'rgba(10,26,58,0.85)',
             backdropFilter: 'blur(10px)',
             borderBottom: '1px solid rgba(212,175,55,0.15)'
           }}>
-          <h2 className="text-white font-bold lg:hidden tracking-widest text-sm" style={{ fontFamily: 'monospace' }}>BCN SECURE</h2>
+          
+          <div className="flex items-center gap-3">
+            {/* 🔹 Playful Menu Button */}
+            <button 
+              className="lg:hidden p-2 rounded-full text-[#D4AF37] bg-white/5 hover:bg-white/10 transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center"
+              onClick={() => setMobileMenuOpen(true)}
+            >
+              <Menu size={20} />
+            </button>
+            <h2 className="text-white font-bold lg:hidden tracking-widest text-sm ml-1" style={{ fontFamily: 'monospace' }}>BCN SECURE</h2>
+          </div>
+
           <div className="flex items-center gap-4 ml-auto">
-            <Link href="/" className="text-xs flex items-center gap-1 transition-colors" style={{ color: 'rgba(212,175,55,0.6)' }} onMouseEnter={(e) => e.currentTarget.style.color = '#D4AF37'} onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(212,175,55,0.6)'}>
+            <Link href="/" className="text-xs hidden sm:flex items-center gap-1 transition-colors hover:text-[#D4AF37] hover:scale-105 transform" style={{ color: 'rgba(212,175,55,0.6)' }}>
               <ExternalLink size={14} /> সাইট দেখুন
             </Link>
-            <div className="h-4 w-[1px]" style={{ background: 'rgba(212,175,55,0.2)' }}></div>
-            <div className="flex items-center gap-2">
-              <span className="live-dot w-1.5 h-1.5 rounded-full inline-block" style={{ background: '#D4AF37' }} />
-              <p className="text-sm font-bold tracking-widest" style={{ color: '#D4AF37', fontFamily: 'monospace' }}>
-                {user?.name?.toUpperCase()} ({user?.role})
+            <div className="hidden sm:block h-4 w-[1px]" style={{ background: 'rgba(212,175,55,0.2)' }}></div>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-[#D4AF37]/20">
+              <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#D4AF37', boxShadow: '0 0 8px #D4AF37' }} />
+              <p className="text-xs sm:text-sm font-bold tracking-widest truncate max-w-[100px] sm:max-w-none" style={{ color: '#D4AF37', fontFamily: 'monospace' }}>
+                {user?.name?.toUpperCase()}
               </p>
             </div>
           </div>
         </header>
 
-        <div className="p-8 max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div className="p-4 lg:p-8 max-w-6xl mx-auto animate-in fade-in duration-500">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div>
-              <h2 className="text-3xl font-bold text-white tracking-tight" style={{ fontFamily: 'var(--font-playfair), serif' }}>
-                স্বাগতম, {user?.name}! <span className="opacity-80">👋</span>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight" style={{ fontFamily: 'var(--font-playfair), serif' }}>
+                স্বাগতম, {user?.name}! <span className="opacity-80 inline-block origin-bottom-right hover:animate-pulse">👋</span>
               </h2>
-              <p className="mt-2 text-sm" style={{ color: 'rgba(122,134,182,0.8)' }}>আপনার খবরের আপডেট এবং এনালিটিক্স এখানে দেখুন।</p>
+              <p className="mt-2 text-xs sm:text-sm" style={{ color: 'rgba(122,134,182,0.8)' }}>আপনার খবরের আপডেট এবং এনালিটিক্স এখানে দেখুন।</p>
             </div>
-            <Link href="/newsroom-bcn-2024/articles/create" className="px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 transition-transform hover:scale-105"
-              style={{ background: 'linear-gradient(135deg, #D4AF37, #B8960C)', color: '#0A1A3A', boxShadow: '0 4px 15px rgba(212,175,55,0.3)' }}>
+            <Link href="/newsroom-bcn-2024/articles/create" className="px-6 py-2.5 rounded-lg font-bold text-sm flex items-center justify-center sm:justify-start gap-2 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(212,175,55,0.4)]"
+              style={{ background: 'linear-gradient(135deg, #D4AF37, #B8960C)', color: '#0A1A3A' }}>
               <PlusCircle size={18} /> নতুন সংবাদ লিখুন
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-            <StatCard icon={<FileText />} label="মোট সংবাদ" value={stats.articles} loading={dataLoading} />
-            <StatCard icon={<CheckCircle />} label="প্রকাশিত" value={stats.published} loading={dataLoading} />
-            <StatCard icon={<Clock />} label="ড্রাফট" value={stats.draft} loading={dataLoading} />
-            <StatCard icon={<UsersIcon />} label="ইউজার" value={stats.users} loading={dataLoading} />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-10">
+            <StatCard icon={<FileText />} label="মোট সংবাদ" value={stats.articles} loading={dataLoading} delay={0} />
+            <StatCard icon={<CheckCircle />} label="প্রকাশিত" value={stats.published} loading={dataLoading} delay={100} />
+            <StatCard icon={<Clock />} label="ড্রাফট" value={stats.draft} loading={dataLoading} delay={200} />
+            <StatCard icon={<UsersIcon />} label="ইউজার" value={stats.users} loading={dataLoading} delay={300} />
           </div>
 
-          <div className="rounded-xl overflow-hidden shadow-2xl"
+          <div className="rounded-xl overflow-hidden shadow-2xl transition-all duration-500 hover:shadow-[0_15px_50px_-10px_rgba(212,175,55,0.15)]"
             style={{
-              background: 'rgba(15, 33, 71, 0.6)',
+              background: 'rgba(15, 33, 71, 0.4)',
               backdropFilter: 'blur(12px)',
               border: '1px solid rgba(212,175,55,0.2)'
             }}>
-            <div className="px-6 py-5 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(212,175,55,0.15)' }}>
-              <h3 className="text-white font-bold flex items-center gap-2" style={{ fontFamily: 'var(--font-playfair), serif' }}>
-                <AlertCircle size={18} style={{ color: '#D4AF37' }} /> সাম্প্রতিক অ্যাক্টিভিটি
+            <div className="px-4 sm:px-6 py-5 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(212,175,55,0.15)' }}>
+              <h3 className="text-white font-bold flex items-center gap-2 text-sm sm:text-base" style={{ fontFamily: 'var(--font-playfair), serif' }}>
+                <AlertCircle size={18} className="text-[#D4AF37] animate-bounce" /> সাম্প্রতিক অ্যাক্টিভিটি
               </h3>
-              <Link href="/newsroom-bcn-2024/articles" className="text-xs hover:underline transition-colors" style={{ color: 'rgba(212,175,55,0.8)' }} onMouseEnter={(e) => e.currentTarget.style.color = '#D4AF37'} onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(212,175,55,0.8)'}>
+              <Link href="/newsroom-bcn-2024/articles" className="text-xs hover:underline transition-colors hover:text-[#D4AF37]" style={{ color: 'rgba(212,175,55,0.8)' }}>
                 সবগুলো দেখুন →
               </Link>
             </div>
             
             <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead style={{ background: 'rgba(10,26,58,0.4)' }}>
+              <table className="w-full text-left min-w-[600px]">
+                <thead style={{ background: 'rgba(10,26,58,0.6)' }}>
                   <tr>
                     <th className="px-6 py-4 font-semibold text-xs tracking-widest uppercase" style={{ color: 'rgba(212,175,55,0.7)', fontFamily: 'monospace' }}>শিরোনাম</th>
                     <th className="px-6 py-4 font-semibold text-xs tracking-widest uppercase text-center" style={{ color: 'rgba(212,175,55,0.7)', fontFamily: 'monospace' }}>স্ট্যাটাস</th>
@@ -301,36 +347,42 @@ export default function AdminDashboard() {
                   ) : recentArticles.length === 0 ? (
                     <tr><td colSpan={4} className="px-6 py-12 text-center" style={{ color: 'rgba(122,134,182,0.8)' }}>কোনো ডেটা পাওয়া যায়নি</td></tr>
                   ) : (
-                    recentArticles.map((article) => {
+                    recentArticles.map((article, index) => {
                       const isAuthor = article.author?.id === user?.id;
                       const isAdminOrEditor = ['ADMIN', 'SUPER_ADMIN', 'EDITOR'].includes(user?.role || '');
                       const canEditOrDelete = isAuthor || isAdminOrEditor;
 
                       return (
-                        <tr key={article.id} className="transition-colors group border-b last:border-0" style={{ borderColor: 'rgba(212,175,55,0.1)' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(212,175,55,0.05)'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                        <tr key={article.id} 
+                          className="transition-colors group border-b last:border-0 hover:bg-[#D4AF37]/10 animate-in fade-in slide-in-from-bottom-4 duration-500" 
+                          style={{ 
+                            borderColor: 'rgba(212,175,55,0.1)',
+                            animationFillMode: 'both',
+                            animationDelay: `${index * 100}ms`
+                          }}>
                           <td className="px-6 py-4">
-                            <p className="text-sm text-white font-medium truncate max-w-xs">{article.title}</p>
+                            <p className="text-sm text-white font-medium truncate max-w-xs transition-colors group-hover:text-[#D4AF37]">{article.title}</p>
                             <p className="text-[10px] mt-1" style={{ color: 'rgba(122,134,182,0.8)' }}>{timeAgo(article.createdAt)}</p>
                           </td>
                           <td className="px-6 py-4 text-center">
                             <span className={`inline-flex px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
-                              article.status === 'PUBLISHED' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+                              article.status === 'PUBLISHED' ? 'bg-green-500/10 text-green-400 border border-green-500/20 shadow-[0_0_10px_rgba(34,197,94,0.1)]' : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.1)]'
                             }`}>
                               {article.status === 'PUBLISHED' ? 'Live' : 'Draft'}
                             </span>
                           </td>
                           <td className="px-6 py-4 text-sm" style={{ color: 'rgba(122,134,182,0.8)' }}>{article.author?.name || 'Unknown'}</td>
                           <td className="px-6 py-4 text-right">
-                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center justify-end gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 sm:translate-x-2 sm:group-hover:translate-x-0">
                               {article.status !== 'PUBLISHED' && isAdminOrEditor && (
-                                <button onClick={() => handlePublish(article.id)} className="p-1.5 text-green-400 hover:bg-green-500/20 rounded transition-colors"><CheckCircle size={16} /></button>
+                                <button onClick={() => handlePublish(article.id)} className="p-1.5 text-green-400 hover:bg-green-500/20 rounded hover:scale-110 transition-all"><CheckCircle size={16} /></button>
                               )}
-                              <Link href={`/news/${article.slug}`} className="p-1.5 text-blue-400 hover:bg-blue-500/20 rounded transition-colors"><ExternalLink size={16} /></Link>
+                              <Link href={`/news/${article.slug}`} className="p-1.5 text-blue-400 hover:bg-blue-500/20 rounded hover:scale-110 transition-all"><ExternalLink size={16} /></Link>
                               {canEditOrDelete && (
-                                <Link href={`/newsroom-bcn-2024/articles/edit/${article.id}`} className="p-1.5 text-indigo-400 hover:bg-indigo-500/20 rounded transition-colors"><Edit size={16} /></Link>
+                                <Link href={`/newsroom-bcn-2024/articles/edit/${article.id}`} className="p-1.5 text-indigo-400 hover:bg-indigo-500/20 rounded hover:scale-110 transition-all"><Edit size={16} /></Link>
                               )}
                               {canEditOrDelete && (
-                                <button onClick={() => handleDelete(article.id)} className="p-1.5 text-red-400 hover:bg-red-500/20 rounded transition-colors"><AlertCircle size={16} /></button>
+                                <button onClick={() => handleDelete(article.id)} className="p-1.5 text-red-400 hover:bg-red-500/20 rounded hover:scale-110 transition-all"><AlertCircle size={16} /></button>
                               )}
                             </div>
                           </td>
@@ -348,24 +400,26 @@ export default function AdminDashboard() {
   );
 }
 
-function StatCard({ icon, label, value, loading }: any) {
+function StatCard({ icon, label, value, loading, delay }: any) {
   return (
-    <div className="rounded-xl p-6 transition-all group cursor-default" 
+    <div className="rounded-xl p-4 sm:p-6 transition-all duration-500 group cursor-default shadow-lg hover:shadow-[0_10px_30px_rgba(212,175,55,0.15)] hover:-translate-y-2 animate-in fade-in slide-in-from-bottom-4" 
       style={{ 
-        background: 'rgba(15, 33, 71, 0.6)', 
+        background: 'rgba(15, 33, 71, 0.4)', 
         backdropFilter: 'blur(12px)', 
-        border: '1px solid rgba(212,175,55,0.2)' 
+        border: '1px solid rgba(212,175,55,0.15)',
+        animationFillMode: 'both',
+        animationDelay: `${delay}ms`
       }}
-      onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(212,175,55,0.5)'} 
-      onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(212,175,55,0.2)'}>
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform" 
-          style={{ background: 'rgba(10,26,58,0.8)', border: '1px solid rgba(212,175,55,0.15)', color: '#D4AF37' }}>
+      onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(212,175,55,0.6)'} 
+      onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(212,175,55,0.15)'}>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center group-hover:scale-110 group-hover:bg-[#D4AF37]/20 transition-all duration-500" 
+          style={{ background: 'rgba(10,26,58,0.8)', border: '1px solid rgba(212,175,55,0.2)', color: '#D4AF37' }}>
           {icon}
         </div>
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'rgba(212,175,55,0.8)', fontFamily: 'monospace' }}>{label}</p>
-          <h4 className="text-2xl font-bold text-white mt-1">{loading ? "..." : value.toLocaleString('bn-BD')}</h4>
+          <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-colors group-hover:text-white" style={{ color: 'rgba(212,175,55,0.8)', fontFamily: 'monospace' }}>{label}</p>
+          <h4 className="text-xl sm:text-2xl font-bold text-white mt-1 transition-transform group-hover:translate-x-1">{loading ? "..." : value.toLocaleString('bn-BD')}</h4>
         </div>
       </div>
     </div>

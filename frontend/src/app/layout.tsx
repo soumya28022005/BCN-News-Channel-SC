@@ -4,7 +4,6 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import './globals.css';
 
-// ✅ FIX: সরাসরি অ্যাড ইমপোর্ট না করে AdsWrapper ইমপোর্ট করা হলো
 import AdsWrapper from '../components/ads/AdsWrapper';
 
 const tiroBangla = Tiro_Bangla({
@@ -59,8 +58,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `
               try {
                 var theme = localStorage.getItem('bcn-theme');
-                if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                // ✅ FIX: শুধুমাত্র ইউজার নিজে ডার্ক মোড সিলেক্ট করলেই ডার্ক হবে। ডিফল্টভাবে লাইট থাকবে।
+                if (theme === 'dark') {
                   document.documentElement.classList.add('dark');
+                } else if (!theme) {
+                  localStorage.setItem('bcn-theme', 'light');
                 }
               } catch(e) {}
             `,
@@ -69,10 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`${tiroBangla.variable} ${playfair.variable} ${jetbrains.variable}`}>
         <Header />
-        
-        {/* ✅ FIX: AdsWrapper এখানে দেওয়া হলো, যা অ্যাডমিনে অ্যাড ব্লক করবে */}
         <AdsWrapper />
-        
         {children}
         <Footer />
       </body>
