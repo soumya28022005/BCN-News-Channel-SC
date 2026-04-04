@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { AD_CONFIG } from '../../config/ads.config';
 import { api } from '../../lib/api';
 
@@ -9,12 +10,16 @@ const getValidUrl = (url?: string) => {
 };
 
 export default function BottomStickyAd() {
+  const pathname = usePathname();
   const [ads, setAds] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
+    // Admin route hole API theke ad fetch korbei na
+    if (pathname?.includes('/newsroom-bcn-2024') || pathname?.includes('/admin')) return;
     if (AD_CONFIG.ADSENSE_ENABLED) return;
+    
     const fetchAd = async () => {
       try {
         const res = await api.get<any>('/sponsor');
@@ -28,7 +33,7 @@ export default function BottomStickyAd() {
       }
     };
     fetchAd();
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     if (ads.length <= 1) return;
@@ -38,6 +43,8 @@ export default function BottomStickyAd() {
     return () => clearInterval(interval);
   }, [ads.length]);
 
+  // Admin page e jeno ekebarei UI te load na hoy
+  if (pathname?.includes('/newsroom-bcn-2024') || pathname?.includes('/admin')) return null;
   if (!visible) return null;
   if (!AD_CONFIG.ADSENSE_ENABLED && ads.length === 0) return null;
 
@@ -65,7 +72,6 @@ export default function BottomStickyAd() {
                  data-ad-client={AD_CONFIG.ADSENSE_CLIENT_ID}></ins>
           </div>
         ) : (
-          /* ✅ FIX: getValidUrl ব্যবহার করা হয়েছে */
           <a href={getValidUrl(currentAd?.linkUrl)} target="_blank" rel="noreferrer" className="block w-full flex justify-center py-0.5">
             <img 
               src={currentAd?.imageUrl} 

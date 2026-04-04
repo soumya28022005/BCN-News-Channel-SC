@@ -3,21 +3,19 @@
 import { usePathname } from 'next/navigation';
 import SponsorPopup from '../news/SponsorPopup';
 import BottomStickyAd from './BottomStickyAd';
-import TopBannerAd from './TopBannerAd'; // ✅ FIX: Top Banner ইমপোর্ট করা হলো
+import TopBannerAd from './TopBannerAd';
 
 export default function AdsWrapper() {
   const pathname = usePathname();
 
-  // ইউজার অ্যাডমিন প্যানেলে থাকলে কোনো অ্যাড দেখাবে না
-  if (pathname?.startsWith('/newsroom-bcn-2024')) {
+  // URL e 'newsroom-bcn-2024' ba 'admin' thakle kono ad dekhabe na
+  if (pathname?.includes('/newsroom-bcn-2024') || pathname?.includes('/admin')) {
     return null;
   }
 
   return (
     <>
-      {/* ✅ FIX: হেডারের ঠিক নিচেই Top Banner দেখাবে */}
       <TopBannerAd />
-      
       <SponsorPopup />
       <BottomStickyAd />
     </>

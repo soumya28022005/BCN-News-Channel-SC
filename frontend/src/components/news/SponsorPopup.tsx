@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import { api } from '@/lib/api';
 
 const getValidUrl = (url?: string) => {
@@ -8,6 +9,7 @@ const getValidUrl = (url?: string) => {
 };
 
 export default function SponsorPopup() {
+  const pathname = usePathname();
   const [sponsor, setSponsor] = useState<any>(null);
   const [show, setShow] = useState(false);
   const [timeLeft, setTimeLeft] = useState(5);
@@ -16,6 +18,9 @@ export default function SponsorPopup() {
   useEffect(() => { showRef.current = show; }, [show]);
 
   useEffect(() => {
+    // Admin panel e API call o jeno na hoy tai ekhane check kora holo
+    if (pathname?.includes('/newsroom-bcn-2024') || pathname?.includes('/admin')) return;
+
     const checkAndShowAd = async () => {
       if (showRef.current) return;
       
@@ -46,7 +51,7 @@ export default function SponsorPopup() {
     checkAndShowAd();
     const interval = setInterval(checkAndShowAd, 30000); 
     return () => clearInterval(interval);
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     if (!show) return;
@@ -56,6 +61,8 @@ export default function SponsorPopup() {
     }
   }, [show, timeLeft]);
 
+  // Jodiyo AdsWrapper theke null hobe, tobuo extra check
+  if (pathname?.includes('/newsroom-bcn-2024') || pathname?.includes('/admin')) return null;
   if (!show || !sponsor) return null;
 
   return (
@@ -63,7 +70,6 @@ export default function SponsorPopup() {
       style={{ background: 'rgba(10,26,58,0.75)', backdropFilter: 'blur(14px)' }}>
       <div className="relative max-w-4xl w-full rounded-2xl overflow-hidden shadow-[0_24px_80px_rgba(0,0,0,0.9)] animate-in zoom-in-95 duration-500"
         style={{ border: '1px solid rgba(212,175,55,0.4)', background: '#0A0A0F' }}>
-        {/* ✅ FIX: getValidUrl ব্যবহার করা হয়েছে */}
         <a href={getValidUrl(sponsor.linkUrl)} target="_blank" rel="noopener noreferrer" className="block cursor-pointer">
           <img src={sponsor.imageUrl} alt="Sponsor" className="w-full h-auto max-h-[80vh] object-contain bg-black transition-transform duration-500 hover:scale-[1.02]" />
         </a>
