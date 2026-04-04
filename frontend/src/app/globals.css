@@ -482,3 +482,15 @@ h1, h2, h3, h4, h5, h6 {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+@keyframes ticker-scroll {
+  0%   { transform: translateX(100vw); }
+  100% { transform: translateX(-100%); }
+}
+
+.ticker-scroll {
+  display: inline-block;
+  white-space: nowrap;
+  animation: ticker-scroll 120s linear infinite;
+  will-change: transform;
+}

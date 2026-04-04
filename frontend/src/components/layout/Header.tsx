@@ -17,8 +17,7 @@ export default function Header() {
   const [today, setToday] = useState('');
   const [time, setTime] = useState('');
   const [dark, setDark] = useState(false);
-  
-  const [tickerText, setTickerText] = useState('স্বাগতম বেঙ্গল ক্রনিকল নেটওয়ার্কে - সত্যের সাথে, সবসময়...');
+  const [tickerText, setTickerText] = useState('স্বাগতম বেঙ্গল ক্রনিকল নেটওয়ার্কে - সত্যের সাথে, সবসময়...');
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -81,226 +80,214 @@ export default function Header() {
     href === '/' ? pathname === '/' : pathname.startsWith(href);
 
   return (
-    <>
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes scroll-left {
-          0% { transform: translateX(100%); }
-          100% { transform: translateX(-100%); }
-        }
-        .animate-scroll-left {
-          display: inline-block;
-          white-space: nowrap;
-          animation: scroll-left 25s linear infinite;
-        }
-        .animate-scroll-left:hover {
-          animation-play-state: paused;
-        }
-      `}} />
-
-      <header
-        className="sticky top-0 z-50 transition-all duration-300"
-        style={{
-          background: 'var(--bg2)',
-          borderBottom: '1px solid var(--border)',
-          boxShadow: scrolled ? 'var(--shadow-md)' : 'none',
-        }}
-      >
-        <div style={{ background: 'var(--bg3)', borderBottom: '1px solid var(--border)' }}>
-          <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-8">
-            <div className="flex items-center gap-3">
-              <span
-                className="flex items-center gap-1.5 text-[10px] font-bold tracking-widest uppercase"
-                style={{ color: 'var(--gold)' }}
-              >
-                <span
-                  className="live-dot w-1.5 h-1.5 rounded-full inline-block"
-                  style={{ background: '#DC2626' }}
-                />
-                LIVE
-              </span>
-              <span className="text-[11px]" style={{ color: 'var(--muted)' }}>
-                {mounted ? today : ''}
-              </span>
-            </div>
-            <span className="font-mono text-[11px]" style={{ color: 'var(--gold)' }}>
-              {mounted ? time : ''}
+    <header
+      className="sticky top-0 z-50 transition-all duration-300"
+      style={{
+        background: 'var(--bg2)',
+        borderBottom: '1px solid var(--border)',
+        boxShadow: scrolled ? 'var(--shadow-md)' : 'none',
+      }}
+    >
+      {/* Top bar */}
+      <div style={{ background: 'var(--bg3)', borderBottom: '1px solid var(--border)' }}>
+        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-8">
+          <div className="flex items-center gap-3">
+            <span
+              className="flex items-center gap-1.5 text-[10px] font-bold tracking-widest uppercase"
+              style={{ color: 'var(--gold)' }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: '#DC2626' }} />
+              LIVE
+            </span>
+            <span className="text-[11px]" style={{ color: 'var(--muted)' }}>
+              {mounted ? today : ''}
             </span>
           </div>
+          <span className="font-mono text-[11px]" style={{ color: 'var(--gold)' }}>
+            {mounted ? time : ''}
+          </span>
         </div>
+      </div>
 
-        <div style={{ background: 'var(--bg2)', borderBottom: '1px solid var(--gold-line)' }}>
-          <div
-            className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4"
-            style={{
-              background: 'linear-gradient(90deg, rgba(212,175,55,0.12), transparent)',
-            }}
-          >
-            <Link href="/" aria-label="BCN Home" className="flex-shrink-0">
-              <Image 
-                src={logo} 
-                alt="BCN Logo" 
-                height={56} // h-14 equivalent
-                width={150} // Provide a rough width to prevent layout shift
-                priority 
-                sizes="(max-width: 768px) 100px, 150px"
-                className="h-14 w-auto object-contain" 
-              />
-            </Link>
+      {/* Logo + Ticker + Actions */}
+      <div style={{ background: 'var(--bg2)', borderBottom: '1px solid var(--gold-line)' }}>
+        <div
+          className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4"
+          style={{ background: 'linear-gradient(90deg, rgba(212,175,55,0.12), transparent)' }}
+        >
+          {/* Logo */}
+          <Link href="/" aria-label="BCN Home" className="flex-shrink-0">
+            <Image
+              src={logo}
+              alt="BCN Logo"
+              height={56}
+              width={150}
+              priority
+              sizes="(max-width: 768px) 100px, 150px"
+              className="h-14 w-auto object-contain"
+            />
+          </Link>
 
-            <div className="hidden md:flex flex-1 max-w-2xl bg-[var(--bg3)] border border-[var(--border)] rounded-full overflow-hidden items-center shadow-inner relative h-10">
-              <div className="absolute left-0 z-10 h-full flex items-center px-4 rounded-r-full shadow-[2px_0_10px_rgba(0,0,0,0.1)]" style={{ background: 'var(--accent-red)' }}>
-                 <span className="text-white text-[11px] font-bold tracking-widest flex items-center gap-1.5">
-                   <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                   ফ্ল্যাশ
-                 </span>
-              </div>
-              <div className="flex-1 overflow-hidden ml-20 relative h-full flex items-center">
-                <span className="animate-scroll-left text-sm font-medium cursor-pointer" style={{ color: 'var(--text)' }}>
-                  {tickerText} &nbsp;&nbsp;&nbsp; • &nbsp;&nbsp;&nbsp; {tickerText}
-                </span>
-              </div>
+          {/* Desktop Ticker */}
+          <div className="hidden md:flex flex-1 max-w-2xl bg-[var(--bg3)] border border-[var(--border)] rounded-full overflow-hidden items-center shadow-inner relative h-10">
+            <div
+              className="absolute left-0 z-10 h-full flex items-center px-4 rounded-r-full shadow-[2px_0_10px_rgba(0,0,0,0.1)]"
+              style={{ background: 'var(--accent-red)' }}
+            >
+              <span className="text-white text-[11px] font-bold tracking-widest flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                ব্রেকিং নিউজ
+              </span>
             </div>
-
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-full"
-                style={{ color: 'var(--muted)', background: 'var(--bg3)' }}
-                aria-label="Theme toggle"
-              >
-                {dark ? '☀️' : '🌙'}
-              </button>
-
-              <Link
-                href="/search"
-                className="p-2 rounded-full"
-                style={{ color: 'var(--muted)', background: 'var(--bg3)' }}
-                aria-label="Search"
-              >
-                🔍
-              </Link>
-
-              <button
-                className="md:hidden p-2 rounded-full"
-                style={{ color: 'var(--muted)', background: 'var(--bg3)' }}
-                onClick={() => setMenuOpen((v) => !v)}
-                aria-label="Toggle menu"
-              >
-                ☰
-              </button>
+            <div className="flex-1 overflow-hidden ml-32 relative h-full flex items-center">
+              <span className="ticker-scroll text-sm font-medium cursor-pointer" style={{ color: 'var(--text)' }}>
+                {tickerText}&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;{tickerText}&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;{tickerText}
+              </span>
             </div>
           </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full"
+              style={{ color: 'var(--muted)', background: 'var(--bg3)' }}
+              aria-label="Theme toggle"
+            >
+              {dark ? '☀️' : '🌙'}
+            </button>
+
+            <Link
+              href="/search"
+              className="p-2 rounded-full"
+              style={{ color: 'var(--muted)', background: 'var(--bg3)' }}
+              aria-label="Search"
+            >
+              🔍
+            </Link>
+
+            <button
+              className="md:hidden p-2 rounded-full"
+              style={{ color: 'var(--muted)', background: 'var(--bg3)' }}
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-label="Toggle menu"
+            >
+              ☰
+            </button>
+          </div>
         </div>
+      </div>
 
-        <div className="gold-line opacity-60" />
+      <div className="gold-line opacity-60" />
 
-        <nav style={{ background: 'var(--bg2)' }}>
-          <div className="max-w-7xl mx-auto px-2">
-            <ul className="hidden md:flex items-center">
-              <li>
+      {/* Nav */}
+      <nav style={{ background: 'var(--bg2)' }}>
+        <div className="max-w-7xl mx-auto px-2">
+          <ul className="hidden md:flex items-center">
+            <li>
+              <Link
+                href="/"
+                className="block px-4 py-3 text-sm font-semibold"
+                style={{ color: isActive('/') ? 'var(--gold)' : 'var(--text)' }}
+              >
+                হোম
+              </Link>
+            </li>
+
+            {BCN_MAIN_CATEGORIES.map((cat) => (
+              <li key={cat.slug}>
                 <Link
-                  href="/"
-                  className="block px-4 py-3 text-sm font-semibold"
-                  style={{ color: isActive('/') ? 'var(--gold)' : 'var(--text)' }}
+                  href={`/category/${cat.slug}`}
+                  className="block px-4 py-3 text-sm transition-colors hover:text-[var(--gold)]"
+                  style={{ color: pathname.includes(cat.slug) ? 'var(--gold)' : 'var(--muted)' }}
                 >
+                  {cat.name}
+                </Link>
+              </li>
+            ))}
+
+            <li
+              className="relative"
+              onMouseEnter={() => setMoreOpen(true)}
+              onMouseLeave={() => setMoreOpen(false)}
+            >
+              <button
+                className="flex items-center gap-1 px-4 py-3 text-sm"
+                style={{ color: 'var(--muted)' }}
+              >
+                আরও
+              </button>
+
+              {moreOpen && (
+                <div
+                  className="absolute left-0 top-full mt-2 w-52 rounded-xl py-2"
+                  style={{
+                    background: 'rgba(15,33,71,0.95)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(212,175,55,0.2)',
+                    boxShadow: '0 20px 40px rgba(0,0,0,0.25)',
+                    zIndex: 100,
+                  }}
+                >
+                  {BCN_MORE_CATEGORIES.map((cat) => (
+                    <Link
+                      key={cat.slug}
+                      href={`/category/${cat.slug}`}
+                      className="block px-4 py-2 text-sm hover:text-[var(--gold)]"
+                      style={{ color: '#fff' }}
+                    >
+                      {cat.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </li>
+
+            <li className="ml-auto">
+              <Link
+                href="/trending"
+                className="block px-4 py-3 text-sm font-semibold"
+                style={{ color: 'var(--gold)' }}
+              >
+                🔥 ট্রেন্ডিং
+              </Link>
+            </li>
+          </ul>
+
+          {/* Mobile Menu */}
+          {menuOpen && (
+            <ul className="md:hidden flex flex-col py-2">
+              <li>
+                <Link href="/" onClick={() => setMenuOpen(false)} className="block px-4 py-3 text-sm">
                   হোম
                 </Link>
               </li>
-
               {BCN_MAIN_CATEGORIES.map((cat) => (
                 <li key={cat.slug}>
                   <Link
                     href={`/category/${cat.slug}`}
-                    className="block px-4 py-3 text-sm transition-colors hover:text-[var(--gold)]"
-                    style={{
-                      color: pathname.includes(cat.slug) ? 'var(--gold)' : 'var(--muted)',
-                    }}
+                    onClick={() => setMenuOpen(false)}
+                    className="block px-4 py-3 text-sm"
                   >
                     {cat.name}
                   </Link>
                 </li>
               ))}
-
-              <li
-                className="relative"
-                onMouseEnter={() => setMoreOpen(true)}
-                onMouseLeave={() => setMoreOpen(false)}
-              >
-                <button
-                  className="flex items-center gap-1 px-4 py-3 text-sm"
-                  style={{ color: 'var(--muted)' }}
-                >
-                  আরও
-                </button>
-
-                {moreOpen && (
-                  <div
-                    className="absolute left-0 top-full mt-2 w-52 rounded-xl py-2"
-                    style={{
-                      background: 'rgba(15,33,71,0.95)',
-                      backdropFilter: 'blur(10px)',
-                      border: '1px solid rgba(212,175,55,0.2)',
-                      boxShadow: '0 20px 40px rgba(0,0,0,0.25)',
-                      zIndex: 100,
-                    }}
+              {BCN_MORE_CATEGORIES.map((cat) => (
+                <li key={cat.slug}>
+                  <Link
+                    href={`/category/${cat.slug}`}
+                    onClick={() => setMenuOpen(false)}
+                    className="block px-4 py-3 text-sm"
                   >
-                    {BCN_MORE_CATEGORIES.map((cat) => (
-                      <Link
-                        key={cat.slug}
-                        href={`/category/${cat.slug}`}
-                        className="block px-4 py-2 text-sm hover:text-[var(--gold)]"
-                        style={{ color: '#fff' }}
-                      >
-                        {cat.name}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </li>
-
-              <li className="ml-auto">
-                <Link href="/trending" className="block px-4 py-3 text-sm font-semibold" style={{ color: 'var(--gold)' }}>
-                  🔥 ট্রেন্ডিং
-                </Link>
-              </li>
-            </ul>
-
-            {menuOpen && (
-              <ul className="md:hidden flex flex-col py-2">
-                <li>
-                  <Link href="/" onClick={() => setMenuOpen(false)} className="block px-4 py-3 text-sm">
-                    হোম
+                    {cat.name}
                   </Link>
                 </li>
-
-                {BCN_MAIN_CATEGORIES.map((cat) => (
-                  <li key={cat.slug}>
-                    <Link
-                      href={`/category/${cat.slug}`}
-                      onClick={() => setMenuOpen(false)}
-                      className="block px-4 py-3 text-sm"
-                    >
-                      {cat.name}
-                    </Link>
-                  </li>
-                ))}
-
-                {BCN_MORE_CATEGORIES.map((cat) => (
-                  <li key={cat.slug}>
-                    <Link
-                      href={`/category/${cat.slug}`}
-                      onClick={() => setMenuOpen(false)}
-                      className="block px-4 py-3 text-sm"
-                    >
-                      {cat.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </nav>
-      </header>
-    </>
+              ))}
+            </ul>
+          )}
+        </div>
+      </nav>
+    </header>
   );
 }
