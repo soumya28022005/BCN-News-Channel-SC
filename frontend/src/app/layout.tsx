@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Tiro_Bangla, Playfair_Display, JetBrains_Mono } from 'next/font/google';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
+import CookieConsent from '../components/layout/CookieConsent';
 import './globals.css';
 
 import AdsWrapper from '../components/ads/AdsWrapper';
@@ -74,6 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AdsWrapper />
         {children}
         <Footer />
+        <CookieConsent /> 
       </body>
     </html>
   );
